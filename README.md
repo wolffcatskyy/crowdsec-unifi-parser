@@ -1,5 +1,10 @@
 # CrowdSec UniFi Parser
 
+---
+**Note:** This project was developed with and is supported exclusively by AI. There is no human support — issues and PRs are triaged and responded to by AI agents. If AI-assisted software isn't for you, no hard feelings — but you might want to reconsider, since so is most of the software you already use.
+
+---
+
 Get clean, CrowdSec-parseable firewall logs from UniFi Dream Machines -- no more syslog noise.
 
 Deploys targeted iptables LOG rules on your UDM/UDR and provides custom CrowdSec parsers that extract source IP, destination IP, port, protocol, zone, and action from every dropped packet.
