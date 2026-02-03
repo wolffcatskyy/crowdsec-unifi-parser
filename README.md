@@ -4,6 +4,8 @@ Get clean, CrowdSec-parseable firewall logs from UniFi Dream Machines -- no more
 
 Deploys targeted iptables LOG rules on your UDM/UDR and provides custom CrowdSec parsers that extract source IP, destination IP, port, protocol, zone, and action from every dropped packet.
 
+> **New to CrowdSec?** [CrowdSec](https://crowdsec.net) is a free, open-source security engine that detects and blocks malicious IPs. It works like fail2ban but with crowd-sourced threat intelligence and a modern bouncer ecosystem. Install it, connect bouncers to your firewalls/proxies, and threats get blocked network-wide.
+
 ## The Problem
 
 If you've tried to feed UniFi syslog into CrowdSec, you've hit a wall:
@@ -286,9 +288,17 @@ python3 deploy-log-rules.py --host 192.168.1.1 --pass YOUR_PASSWORD
 
 Consider adding this to a cron job or running it as part of your firmware update procedure.
 
-## Related Projects
+## Complete UniFi + CrowdSec Suite
 
-- **[crowdsec-unifi-bouncer](https://github.com/wolffcatskyy/crowdsec-unifi-bouncer)** -- Push CrowdSec ban decisions back to your UDM as iptables/ipset rules. Together with this parser, you get a complete feedback loop: detect threats from firewall logs, ban the IPs, and enforce the bans at the network edge.
+This parser is part of a three-project suite that gives UniFi full CrowdSec integration:
+
+| Project | Role | What it does |
+|---------|------|-------------|
+| **This repo** | Visibility | Deploys iptables LOG rules on your UDM/UDR so CrowdSec can detect port scans, brute force, and other threats from your firewall logs |
+| **[crowdsec-blocklist-import](https://github.com/wolffcatskyy/crowdsec-blocklist-import)** | Intelligence | Imports 60,000+ IPs from 28 public threat feeds into CrowdSec — preemptive blocking before attackers even connect |
+| **[crowdsec-unifi-bouncer](https://github.com/wolffcatskyy/crowdsec-unifi-bouncer)** | Enforcement | Pushes CrowdSec ban decisions to your UniFi firewall at the kernel level — 100k+ IPs, 15MB RAM, survives firmware updates |
+
+Together: this **parser** detects threats, **blocklist-import** feeds threat intel, and the **bouncer** enforces bans. A complete detect → decide → enforce feedback loop on UniFi hardware for free.
 
 ## Requirements
 
