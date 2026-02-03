@@ -6,6 +6,19 @@ Deploys targeted iptables LOG rules on your UDM/UDR and provides custom CrowdSec
 
 > **New to CrowdSec?** [CrowdSec](https://crowdsec.net) is a free, open-source security engine that detects and blocks malicious IPs. It works like fail2ban but with crowd-sourced threat intelligence and a modern bouncer ecosystem. Install it, connect bouncers to your firewalls/proxies, and threats get blocked network-wide.
 
+## What You Need
+
+**Yes, this requires a separate machine running CrowdSec.** CrowdSec doesn't run on the UDM itself. Here's what goes where:
+
+| What | Where it runs | What it does |
+|------|--------------|-------------|
+| `deploy-log-rules.py` | Any machine with Python 3 (your laptop, a server, etc.) | One-time SSH into UDM to insert LOG rules. Run once, then again after firmware updates. |
+| Syslog receiver (rsyslog) | Your CrowdSec host or any Linux box | Receives syslog from UDM, writes firewall entries to a file |
+| CrowdSec + these parsers | Same machine as syslog receiver | Reads the log file, detects threats, issues ban decisions |
+| UDM / UDR | Your UniFi device | Sends syslog. That's it. No software installed, no extra load. |
+
+A typical setup: UDM sends syslog to a Raspberry Pi / NAS / VM running CrowdSec. The deploy script runs from your laptop.
+
 ## The Problem
 
 If you've tried to feed UniFi syslog into CrowdSec, you've hit a wall:
