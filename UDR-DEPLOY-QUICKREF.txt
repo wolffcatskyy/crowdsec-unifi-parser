@@ -1,0 +1,60 @@
+================================================================================
+UDR DEPLOYMENT QUICK REFERENCE
+================================================================================
+
+CURRENT STATUS: Blocked - SSH access not available
+
+TARGET DEVICE
+  Device:   UniFi Dream Router (UDR)
+  WAN IP:   47.202.19.61 (HTTPS works, SSH blocked)
+  LAN IP:   192.168.21.1 (no route from macpro/NAS)
+  SSH User: root
+  SSH Pass: !#o#It0S!#o#It0S
+
+BLOCKER
+  SSH port 22 is not accessible:
+  - WAN IP: Firewalled (security best practice)
+  - LAN IP: No network route configured
+
+FASTEST SOLUTION
+  Enable SSH on WAN temporarily:
+  1. Open https://47.202.19.61 in browser
+  2. Settings > System > Advanced > Enable SSH
+  3. Look for "SSH on WAN" option - enable if present
+  4. Run: cd /private/tmp/crowdsec-unifi-parser && ./UDR-QUICK-DEPLOY.sh
+  5. After deployment: Disable SSH on WAN
+
+ONE-LINE DEPLOYMENT (once SSH is accessible)
+  python3 deploy-log-rules.py --host 47.202.19.61 --user root --pass '!#o#It0S!#o#It0S'
+
+  Or via LAN (if route available):
+  python3 deploy-log-rules.py --host 192.168.21.1 --user root --pass '!#o#It0S!#o#It0S'
+
+DRY RUN FIRST (recommended)
+  python3 deploy-log-rules.py --host <IP> --user root --pass '<PASS>' --dry-run
+
+POST-DEPLOYMENT
+  1. Configure syslog on UDR: Settings > System > Logging > Remote Logging
+     Server: 192.168.18.10, Port: 514, Protocol: UDP
+  2. Test: ssh root@<UDR_IP> 'logger -t UNIFI-TEST "Test from UDR"'
+  3. Verify on NAS: ssh nas 'tail -f /var/log/messages | grep UNIFI'
+
+DOCUMENTATION
+  Full details:    UDR-DEPLOY-STATUS.md
+  Summary:         DEPLOYMENT-SUMMARY.md
+  Auto script:     UDR-QUICK-DEPLOY.sh (executable)
+  Main deployer:   deploy-log-rules.py
+
+PROVEN WORKING
+  Same script successfully deployed on UDM SE (192.168.18.1)
+  CrowdSec parser tested and working
+  This is a known-good deployment path
+
+NEED HELP?
+  See UDR-DEPLOY-STATUS.md for:
+  - Alternative access methods (LAN, VPN, manual console)
+  - Detailed troubleshooting
+  - Manual command reference
+  - Network topology analysis
+
+================================================================================
