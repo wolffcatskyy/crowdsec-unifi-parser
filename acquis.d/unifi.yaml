@@ -1,0 +1,10 @@
+# UniFi Firewall DROP Logs (via iptables LOG rules on UDM)
+#
+# Flow: UDM iptables LOG -> syslog-ng -> remote rsyslog -> unifi-fw.log -> CrowdSec
+#
+# Adjust the path below to match where your UniFi firewall logs land.
+# If using Docker CrowdSec, mount the log directory into the container.
+filenames:
+  - /var/log/unifi/unifi-fw.log
+labels:
+  type: unifi

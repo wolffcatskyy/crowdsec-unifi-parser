@@ -1,0 +1,19 @@
+type: leaky
+name: crowdsecurity/iptables-scan-multi_ports
+description: "Detect aggressive portscans"
+filter: "evt.Meta.log_type == 'iptables_drop' && evt.Meta.service == 'tcp'"
+groupby: evt.Meta.source_ip
+distinct: evt.Parsed.dst_port
+capacity: 2
+leakspeed: 5s
+blackhole: 1m
+labels:
+  remediation: true
+  classification:
+    - attack.T1595.001
+    - attack.T1018
+    - attack.T1046
+  behavior: "tcp:scan"
+  label: "TCP Port Scan"
+  spoofable: 3
+  confidence: 1
