@@ -296,7 +296,7 @@ This parser is part of a three-project suite that gives UniFi full CrowdSec inte
 |---------|------|-------------|
 | **This repo** | Visibility | Deploys iptables LOG rules on your UDM/UDR so CrowdSec can detect port scans, brute force, and other threats from your firewall logs |
 | **[crowdsec-blocklist-import](https://github.com/wolffcatskyy/crowdsec-blocklist-import)** | Intelligence | Imports 60,000+ IPs from 28 public threat feeds into CrowdSec — preemptive blocking before attackers even connect |
-| **[crowdsec-unifi-bouncer](https://github.com/wolffcatskyy/crowdsec-unifi-bouncer)** | Enforcement | Pushes CrowdSec ban decisions to your UniFi firewall at the kernel level — 100k+ IPs, 15MB RAM, survives firmware updates |
+| **[crowdsec-unifi-bouncer](https://github.com/wolffcatskyy/crowdsec-unifi-bouncer)** | Enforcement | Pushes CrowdSec ban decisions to your UniFi firewall via ipset/iptables — 100k+ IPs, 15MB RAM, survives firmware updates |
 
 Together: this **parser** detects threats, **blocklist-import** feeds threat intel, and the **bouncer** enforces bans. A complete detect → decide → enforce feedback loop on UniFi hardware for free.
 
