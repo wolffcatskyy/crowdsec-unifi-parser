@@ -1,0 +1,17 @@
+type: leaky
+name: crowdsecurity/dropbear-bf
+description: "Detect SSH brute force attempts against UDM/UDR dropbear"
+filter: "evt.Meta.log_type == 'ssh_failed-auth' && evt.Meta.service == 'dropbear'"
+groupby: evt.Meta.source_ip
+capacity: 4
+leakspeed: 1m
+blackhole: 4h
+labels:
+  remediation: true
+  classification:
+    - attack.T1110.001
+    - attack.T1110.003
+  behavior: "ssh:bruteforce"
+  label: "SSH Brute Force (Dropbear)"
+  spoofable: 0
+  confidence: 3

@@ -213,9 +213,21 @@ Detects aggressive TCP port scans: 3+ distinct destination ports from the same s
 - **Labels**: `remediation: true` (CrowdSec will issue a ban decision)
 - **MITRE ATT&CK**: T1595.001, T1018, T1046
 
-### SSH Brute Force (via `crowdsecurity/ssh-bf`)
+### Dropbear SSH Brute Force (`dropbear-bf`)
 
-The collection includes the standard CrowdSec SSH brute force scenario, which works with the dropbear parser for UDM SSH authentication failures.
+Detects SSH brute force attempts against UDM/UDR dropbear daemon: 5 failed authentication attempts from the same source IP within 1 minute triggers a 4-hour ban.
+
+- **Type**: Leaky bucket
+- **Capacity**: 4 (triggers on 5th failed attempt)
+- **Leak speed**: 1 minute
+- **Blackhole**: 4 hours (ban duration)
+- **Labels**: `remediation: true` (CrowdSec will issue a ban decision)
+- **MITRE ATT&CK**: T1110.001 (Password Guessing), T1110.003 (Password Spraying)
+
+This scenario works with the `dropbear-logs.yaml` parser which extracts failed SSH authentication events from UDM/UDR logs, including:
+- Bad PAM password attempts
+- Login attempts for nonexistent users
+- Pre-auth disconnections
 
 ## Docker CrowdSec Setup
 
@@ -255,7 +267,8 @@ crowdsec-unifi-parser/
 │       ├── unifi-cef.yaml                 # UniFi CEF event enrichment
 │       └── dropbear-logs.yaml             # UDM SSH auth failure parser
 ├── scenarios/
-│   └── iptables-scan-multi_ports.yaml     # TCP port scan detection
+│   ├── iptables-scan-multi_ports.yaml     # TCP port scan detection
+│   └── dropbear-bf.yaml                   # SSH brute force detection (UDM dropbear)
 ├── collections/
 │   └── unifi.yaml                         # Collection bundle
 ├── acquis.d/
