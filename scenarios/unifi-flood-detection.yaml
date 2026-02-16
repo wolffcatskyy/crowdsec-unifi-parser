@@ -1,0 +1,19 @@
+type: leaky
+name: crowdsecurity/unifi-flood-detection
+description: "Detect DDoS/flood attacks - high volume drops from a single IP"
+filter: "evt.Meta.log_type == 'iptables_drop'"
+groupby: evt.Meta.source_ip
+capacity: 99
+leakspeed: 30s
+blackhole: 5m
+labels:
+  remediation: true
+  classification:
+    - attack.T1498
+    - attack.T1499
+  behavior: "network:flood"
+  label: "DDoS/Flood Attack"
+  spoofable: 2
+  confidence: 3
+  service: ""
+duration: 24h

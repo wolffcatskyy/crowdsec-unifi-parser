@@ -78,6 +78,7 @@ UDM iptables LOG rules          CrowdSec parsers
 - **Clean tagged log entries** like `[UNIFI-WAN_LOCAL-D-INVALID]` that are trivial to parse
 - **Two log pipelines**: syslog-based firewall logs AND CEF-format controller events
 - **Port scan detection** out of the box (3+ ports in 5 seconds = ban)
+- **DDoS/flood detection** (100+ drops in 30 seconds = 24-hour ban)
 - **SSH brute force detection** via dropbear parser (UDM's SSH daemon)
 - **Pairs with [crowdsec-unifi-bouncer](https://github.com/wolffcatskyy/crowdsec-unifi-bouncer)** for a complete detect-and-block loop
 
@@ -133,6 +134,7 @@ sudo cp parsers/s01-parse/unifi-cef.yaml /etc/crowdsec/parsers/s01-parse/
 sudo cp parsers/s01-parse/dropbear-logs.yaml /etc/crowdsec/parsers/s01-parse/
 sudo cp scenarios/iptables-scan-multi_ports.yaml /etc/crowdsec/scenarios/
 sudo cp scenarios/unifi-port-knock.yaml /etc/crowdsec/scenarios/
+sudo cp scenarios/unifi-flood-detection.yaml /etc/crowdsec/scenarios/
 sudo cp collections/unifi.yaml /etc/crowdsec/collections/
 ```
 
@@ -235,6 +237,24 @@ Detects systematic sequential port scanning that differs from random burst scans
 
 The two scenarios complement each other: burst detection catches fast attackers immediately, while sequential detection catches patient attackers who spread their probes over time to evade burst detection.
 
+### DDoS/Flood Detection (`unifi-flood-detection`)
+
+Detects high-volume flood attacks: 100+ dropped packets from the same source IP within 30 seconds triggers a 24-hour ban.
+
+- **Type**: Leaky bucket
+- **Capacity**: 99 (triggers on 100th drop)
+- **Leak speed**: 30 seconds
+- **Blackhole**: 5 minutes (suppress duplicate alerts during ongoing attack)
+- **Ban duration**: 24 hours
+- **Labels**: `remediation: true` (CrowdSec will issue a ban decision)
+- **MITRE ATT&CK**: T1498 (Network Denial of Service), T1499 (Endpoint Denial of Service)
+
+This scenario catches:
+- SYN floods
+- UDP floods
+- ICMP floods
+- Any high-volume attack that results in firewall drops
+
 ### Dropbear SSH Brute Force (`dropbear-bf`)
 
 Detects SSH brute force attempts against UDM/UDR dropbear daemon: 5 failed authentication attempts from the same source IP within 1 minute triggers a 4-hour ban.
@@ -288,6 +308,7 @@ services:
       - ./parsers/s01-parse/dropbear-logs.yaml:/etc/crowdsec/parsers/s01-parse/dropbear-logs.yaml:ro
       - ./scenarios/iptables-scan-multi_ports.yaml:/etc/crowdsec/scenarios/iptables-scan-multi_ports.yaml:ro
       - ./scenarios/unifi-port-knock.yaml:/etc/crowdsec/scenarios/unifi-port-knock.yaml:ro
+      - ./scenarios/unifi-flood-detection.yaml:/etc/crowdsec/scenarios/unifi-flood-detection.yaml:ro
       - ./scenarios/dropbear-bf.yaml:/etc/crowdsec/scenarios/dropbear-bf.yaml:ro
       - ./scenarios/unifi-ips-alert.yaml:/etc/crowdsec/scenarios/unifi-ips-alert.yaml:ro
       - ./collections/unifi.yaml:/etc/crowdsec/collections/unifi.yaml:ro
@@ -312,6 +333,7 @@ crowdsec-unifi-parser/
 ├── scenarios/
 │   ├── iptables-scan-multi_ports.yaml     # TCP burst port scan detection
 │   ├── unifi-port-knock.yaml              # Sequential port-knock detection
+│   ├── unifi-flood-detection.yaml         # DDoS/flood attack detection (100+ drops/30s = 24h ban)
 │   ├── dropbear-bf.yaml                   # SSH brute force detection (UDM dropbear)
 │   └── unifi-ips-alert.yaml               # UniFi IPS/Threat Management detection
 ├── collections/
