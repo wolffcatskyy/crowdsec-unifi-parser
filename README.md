@@ -132,6 +132,7 @@ sudo cp parsers/s00-raw/cef-logs.yaml /etc/crowdsec/parsers/s00-raw/
 sudo cp parsers/s01-parse/unifi-cef.yaml /etc/crowdsec/parsers/s01-parse/
 sudo cp parsers/s01-parse/dropbear-logs.yaml /etc/crowdsec/parsers/s01-parse/
 sudo cp scenarios/iptables-scan-multi_ports.yaml /etc/crowdsec/scenarios/
+sudo cp scenarios/unifi-port-knock.yaml /etc/crowdsec/scenarios/
 sudo cp collections/unifi.yaml /etc/crowdsec/collections/
 ```
 
@@ -213,6 +214,27 @@ Detects aggressive TCP port scans: 3+ distinct destination ports from the same s
 - **Labels**: `remediation: true` (CrowdSec will issue a ban decision)
 - **MITRE ATT&CK**: T1595.001, T1018, T1046
 
+### Sequential Port-Knock Detection (`unifi-port-knock`)
+
+Detects systematic sequential port scanning that differs from random burst scans. This catches methodical reconnaissance tools like nmap sequential scans, masscan, and zmap that probe ports in order over a longer timeframe.
+
+- **Type**: Leaky bucket
+- **Capacity**: 9 (triggers on 10th distinct port)
+- **Leak speed**: 1 minute
+- **Blackhole**: 2 minutes (suppress duplicate alerts)
+- **Labels**: `remediation: true` (CrowdSec will issue a ban decision)
+- **MITRE ATT&CK**: T1595.001, T1018, T1046
+- **Confidence**: 2 (higher confidence due to sustained activity pattern)
+
+**Why two scan scenarios?**
+
+| Scenario | Detects | Threshold | Timeframe | Use Case |
+|----------|---------|-----------|-----------|----------|
+| `iptables-scan-multi_ports` | Aggressive burst scans | 3 ports | 5 seconds | Fast scanners, script kiddies |
+| `unifi-port-knock` | Sequential/systematic scans | 10 ports | 1 minute | nmap, masscan, methodical recon |
+
+The two scenarios complement each other: burst detection catches fast attackers immediately, while sequential detection catches patient attackers who spread their probes over time to evade burst detection.
+
 ### Dropbear SSH Brute Force (`dropbear-bf`)
 
 Detects SSH brute force attempts against UDM/UDR dropbear daemon: 5 failed authentication attempts from the same source IP within 1 minute triggers a 4-hour ban.
@@ -265,6 +287,7 @@ services:
       - ./parsers/s01-parse/unifi-cef.yaml:/etc/crowdsec/parsers/s01-parse/unifi-cef.yaml:ro
       - ./parsers/s01-parse/dropbear-logs.yaml:/etc/crowdsec/parsers/s01-parse/dropbear-logs.yaml:ro
       - ./scenarios/iptables-scan-multi_ports.yaml:/etc/crowdsec/scenarios/iptables-scan-multi_ports.yaml:ro
+      - ./scenarios/unifi-port-knock.yaml:/etc/crowdsec/scenarios/unifi-port-knock.yaml:ro
       - ./scenarios/dropbear-bf.yaml:/etc/crowdsec/scenarios/dropbear-bf.yaml:ro
       - ./scenarios/unifi-ips-alert.yaml:/etc/crowdsec/scenarios/unifi-ips-alert.yaml:ro
       - ./collections/unifi.yaml:/etc/crowdsec/collections/unifi.yaml:ro
@@ -287,7 +310,8 @@ crowdsec-unifi-parser/
 │       ├── unifi-cef.yaml                 # UniFi CEF event enrichment
 │       └── dropbear-logs.yaml             # UDM SSH auth failure parser
 ├── scenarios/
-│   ├── iptables-scan-multi_ports.yaml     # TCP port scan detection
+│   ├── iptables-scan-multi_ports.yaml     # TCP burst port scan detection
+│   ├── unifi-port-knock.yaml              # Sequential port-knock detection
 │   ├── dropbear-bf.yaml                   # SSH brute force detection (UDM dropbear)
 │   └── unifi-ips-alert.yaml               # UniFi IPS/Threat Management detection
 ├── collections/
