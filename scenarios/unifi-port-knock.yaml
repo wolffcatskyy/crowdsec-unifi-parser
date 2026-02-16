@@ -1,0 +1,34 @@
+# Sequential Port-Knock / Port Scan Detection
+#
+# Detects systematic sequential port scanning patterns that differ from
+# random multi-port probes. Sequential scanners typically:
+# - Hit many ports in order (e.g., 1-1024, common ports list)
+# - Scan slower than random burst scanners
+# - Show sustained activity over a longer period
+#
+# This scenario complements iptables-scan-multi_ports by catching
+# methodical reconnaissance that flies under the radar of burst detection.
+#
+# Threshold: 10+ unique ports hit within 1 minute from same source IP
+# This catches tools like nmap sequential scans, masscan, zmap
+
+type: leaky
+name: crowdsecurity/unifi-port-knock
+description: "Detect sequential port scanning (port knocking/systematic reconnaissance)"
+filter: "evt.Meta.log_type == 'iptables_drop' && evt.Meta.service == 'tcp'"
+groupby: evt.Meta.source_ip
+distinct: evt.Parsed.dst_port
+capacity: 9
+leakspeed: 1m
+blackhole: 2m
+labels:
+  remediation: true
+  classification:
+    - attack.T1595.001  # Active Scanning: Scanning IP Blocks
+    - attack.T1046      # Network Service Scanning
+    - attack.T1018      # Remote System Discovery
+  behavior: "tcp:portscan"
+  label: "Sequential Port Scan"
+  spoofable: 3
+  confidence: 2
+  service: "tcp"

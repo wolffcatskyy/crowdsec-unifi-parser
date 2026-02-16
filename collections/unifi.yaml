@@ -7,9 +7,10 @@ scenarios:
   - crowdsecurity/ssh-bf
   - crowdsecurity/dropbear-bf
   - crowdsecurity/unifi-ips-alert
+  - crowdsecurity/unifi-port-knock
 collections:
   - crowdsecurity/iptables
-description: "Unifi support: syslog + CEF parsers + port scan + SSH BF + IPS threat detection"
+description: "Unifi support: syslog + CEF parsers + port scan + sequential scan + SSH BF + IPS threat detection"
 author: crowdsecurity
 tags:
   - unifi
