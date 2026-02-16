@@ -1,0 +1,21 @@
+type: leaky
+name: crowdsecurity/unifi-ips-alert
+description: "Detect IPS/Threat Management alerts from UniFi CEF logs"
+filter: "evt.Meta.service == 'unifi' && evt.Meta.ips_signature != '' && evt.Meta.source_ip != ''"
+groupby: evt.Meta.source_ip
+capacity: 2
+leakspeed: 5m
+blackhole: 5m
+labels:
+  remediation: true
+  classification:
+    - attack.T1190
+    - attack.T1203
+    - attack.T1059
+  behavior: "exploit:attempt"
+  label: "UniFi IPS Alert"
+  spoofable: 2
+  confidence: 3
+scope:
+  type: ip
+  expression: evt.Meta.source_ip

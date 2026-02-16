@@ -6,9 +6,10 @@ parsers:
 scenarios:
   - crowdsecurity/ssh-bf
   - crowdsecurity/dropbear-bf
+  - crowdsecurity/unifi-ips-alert
 collections:
   - crowdsecurity/iptables
-description: "Unifi support: syslog + CEF parsers + port scan + SSH BF detection"
+description: "Unifi support: syslog + CEF parsers + port scan + SSH BF + IPS threat detection"
 author: crowdsecurity
 tags:
   - unifi
@@ -17,3 +18,5 @@ tags:
   - dropbear
   - portscan
   - cef
+  - ips
+  - threat-management
