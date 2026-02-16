@@ -229,6 +229,24 @@ This scenario works with the `dropbear-logs.yaml` parser which extracts failed S
 - Login attempts for nonexistent users
 - Pre-auth disconnections
 
+### UniFi IPS/Threat Management Alert (`unifi-ips-alert`)
+
+Detects IPS signature matches from UniFi's built-in Threat Management system. When UniFi IPS detects malicious traffic (exploits, malware, C2 communication, etc.), this scenario triggers a CrowdSec ban.
+
+- **Type**: Leaky bucket
+- **Capacity**: 2 (triggers on 3rd IPS alert)
+- **Leak speed**: 5 minutes
+- **Blackhole**: 5 minutes (suppress duplicate alerts)
+- **Labels**: `remediation: true` (CrowdSec will issue a ban decision)
+- **MITRE ATT&CK**: T1190 (Exploit Public-Facing Application), T1203 (Exploitation for Client Execution), T1059 (Command and Scripting Interpreter)
+
+This scenario uses CEF logs from UniFi's syslog output. It triggers when the same source IP generates 3+ IPS alerts within 5 minutes, indicating persistent malicious activity.
+
+**Example CEF IPS alert:**
+```
+CEF:0|Ubiquiti|UniFi Network|8.6.9|3004|IPS Alert|7|src=45.33.32.156 dst=192.168.1.100 UNIFIipsSignature=ET EXPLOIT ... UNIFIipsSignatureId=2024897
+```
+
 ## Docker CrowdSec Setup
 
 If you run CrowdSec in Docker, mount the log file and config:
@@ -247,6 +265,8 @@ services:
       - ./parsers/s01-parse/unifi-cef.yaml:/etc/crowdsec/parsers/s01-parse/unifi-cef.yaml:ro
       - ./parsers/s01-parse/dropbear-logs.yaml:/etc/crowdsec/parsers/s01-parse/dropbear-logs.yaml:ro
       - ./scenarios/iptables-scan-multi_ports.yaml:/etc/crowdsec/scenarios/iptables-scan-multi_ports.yaml:ro
+      - ./scenarios/dropbear-bf.yaml:/etc/crowdsec/scenarios/dropbear-bf.yaml:ro
+      - ./scenarios/unifi-ips-alert.yaml:/etc/crowdsec/scenarios/unifi-ips-alert.yaml:ro
       - ./collections/unifi.yaml:/etc/crowdsec/collections/unifi.yaml:ro
       - ./acquis.d/unifi.yaml:/etc/crowdsec/acquis.d/unifi.yaml:ro
 ```
@@ -268,7 +288,8 @@ crowdsec-unifi-parser/
 │       └── dropbear-logs.yaml             # UDM SSH auth failure parser
 ├── scenarios/
 │   ├── iptables-scan-multi_ports.yaml     # TCP port scan detection
-│   └── dropbear-bf.yaml                   # SSH brute force detection (UDM dropbear)
+│   ├── dropbear-bf.yaml                   # SSH brute force detection (UDM dropbear)
+│   └── unifi-ips-alert.yaml               # UniFi IPS/Threat Management detection
 ├── collections/
 │   └── unifi.yaml                         # Collection bundle
 ├── acquis.d/
