@@ -126,6 +126,9 @@ mkdir -p "$CROWDSEC_CONFIG_DIR/scenarios"
 cp "$SCRIPT_DIR/scenarios/iptables-scan-multi_ports.yaml" "$CROWDSEC_CONFIG_DIR/scenarios/"
 success "Installed scenarios/iptables-scan-multi_ports.yaml"
 
+cp "$SCRIPT_DIR/scenarios/dropbear-bf.yaml" "$CROWDSEC_CONFIG_DIR/scenarios/"
+success "Installed scenarios/dropbear-bf.yaml"
+
 # ---------------------------------------------------------------------------
 # Install collection
 # ---------------------------------------------------------------------------
@@ -221,6 +224,7 @@ echo "  - parsers/s00-raw/cef-logs.yaml      (CEF format parser)"
 echo "  - parsers/s01-parse/unifi-cef.yaml   (UniFi CEF event parser)"
 echo "  - parsers/s01-parse/dropbear-logs.yaml (UDM SSH auth parser)"
 echo "  - scenarios/iptables-scan-multi_ports.yaml (port scan detection)"
+echo "  - scenarios/dropbear-bf.yaml             (SSH brute force detection)"
 echo "  - collections/unifi.yaml             (collection bundle)"
 echo "  - acquis.d/unifi.yaml                (log acquisition config)"
 echo ""
