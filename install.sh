@@ -129,6 +129,9 @@ success "Installed scenarios/iptables-scan-multi_ports.yaml"
 cp "$SCRIPT_DIR/scenarios/unifi-port-knock.yaml" "$CROWDSEC_CONFIG_DIR/scenarios/"
 success "Installed scenarios/unifi-port-knock.yaml"
 
+cp "$SCRIPT_DIR/scenarios/unifi-flood-detection.yaml" "$CROWDSEC_CONFIG_DIR/scenarios/"
+success "Installed scenarios/unifi-flood-detection.yaml"
+
 cp "$SCRIPT_DIR/scenarios/dropbear-bf.yaml" "$CROWDSEC_CONFIG_DIR/scenarios/"
 success "Installed scenarios/dropbear-bf.yaml"
 
@@ -231,6 +234,7 @@ echo "  - parsers/s01-parse/unifi-cef.yaml   (UniFi CEF event parser)"
 echo "  - parsers/s01-parse/dropbear-logs.yaml (UDM SSH auth parser)"
 echo "  - scenarios/iptables-scan-multi_ports.yaml (burst port scan detection)"
 echo "  - scenarios/unifi-port-knock.yaml    (sequential port scan detection)"
+echo "  - scenarios/unifi-flood-detection.yaml (DDoS/flood detection)"
 echo "  - scenarios/dropbear-bf.yaml         (SSH brute force detection)"
 echo "  - scenarios/unifi-ips-alert.yaml     (IPS/Threat Management detection)"
 echo "  - collections/unifi.yaml             (collection bundle)"
