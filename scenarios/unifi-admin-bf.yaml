@@ -1,0 +1,18 @@
+type: leaky
+name: crowdsecurity/unifi-admin-bf
+description: "Detect brute force attempts on UniFi admin console"
+filter: "evt.Meta.log_type == 'unifi_admin_auth_failure' && evt.Meta.source_ip != ''"
+groupby: evt.Meta.source_ip
+capacity: 4
+leakspeed: 2m
+blackhole: 5m
+labels:
+  remediation: true
+  classification:
+    - attack.T1110.001
+    - attack.T1078
+  behavior: "http:bruteforce"
+  label: "UniFi Admin Brute Force"
+  spoofable: 0
+  confidence: 3
+  service: unifi

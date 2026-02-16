@@ -289,6 +289,24 @@ This scenario uses CEF logs from UniFi's syslog output. It triggers when the sam
 CEF:0|Ubiquiti|UniFi Network|8.6.9|3004|IPS Alert|7|src=45.33.32.156 dst=192.168.1.100 UNIFIipsSignature=ET EXPLOIT ... UNIFIipsSignatureId=2024897
 ```
 
+### UniFi Admin Console Brute Force (`unifi-admin-bf`)
+
+Detects brute force attempts against the UniFi admin console (web UI). This scenario parses CEF-format logs for failed admin login events.
+
+- **Type**: Leaky bucket
+- **Capacity**: 4 (triggers on 5th failed login)
+- **Leak speed**: 2 minutes
+- **Blackhole**: 5 minutes (suppress duplicate alerts)
+- **Labels**: `remediation: true` (CrowdSec will issue a ban decision)
+- **MITRE ATT&CK**: T1110.001 (Password Guessing), T1078 (Valid Accounts)
+
+**Log format detected** (CEF):
+```
+CEF:0|Ubiquiti|UniFi Network|9.0.108|101|Admin Login Failed|5|UNIFIsrcIp=192.168.1.100 UNIFIuser=admin msg=Invalid credentials
+```
+
+**Requires**: CEF logging enabled in UniFi controller settings (Settings > System > Advanced > Remote Logging).
+
 ## Docker CrowdSec Setup
 
 If you run CrowdSec in Docker, mount the log file and config:
@@ -305,12 +323,14 @@ services:
       - ./parsers/s00-raw/unifi-logs.yaml:/etc/crowdsec/parsers/s00-raw/unifi-logs.yaml:ro
       - ./parsers/s00-raw/cef-logs.yaml:/etc/crowdsec/parsers/s00-raw/cef-logs.yaml:ro
       - ./parsers/s01-parse/unifi-cef.yaml:/etc/crowdsec/parsers/s01-parse/unifi-cef.yaml:ro
+      - ./parsers/s01-parse/unifi-admin-auth.yaml:/etc/crowdsec/parsers/s01-parse/unifi-admin-auth.yaml:ro
       - ./parsers/s01-parse/dropbear-logs.yaml:/etc/crowdsec/parsers/s01-parse/dropbear-logs.yaml:ro
       - ./scenarios/iptables-scan-multi_ports.yaml:/etc/crowdsec/scenarios/iptables-scan-multi_ports.yaml:ro
       - ./scenarios/unifi-port-knock.yaml:/etc/crowdsec/scenarios/unifi-port-knock.yaml:ro
       - ./scenarios/unifi-flood-detection.yaml:/etc/crowdsec/scenarios/unifi-flood-detection.yaml:ro
       - ./scenarios/dropbear-bf.yaml:/etc/crowdsec/scenarios/dropbear-bf.yaml:ro
       - ./scenarios/unifi-ips-alert.yaml:/etc/crowdsec/scenarios/unifi-ips-alert.yaml:ro
+      - ./scenarios/unifi-admin-bf.yaml:/etc/crowdsec/scenarios/unifi-admin-bf.yaml:ro
       - ./collections/unifi.yaml:/etc/crowdsec/collections/unifi.yaml:ro
       - ./acquis.d/unifi.yaml:/etc/crowdsec/acquis.d/unifi.yaml:ro
 ```
@@ -329,13 +349,15 @@ crowdsec-unifi-parser/
 │   │   └── cef-logs.yaml                  # CEF (Common Event Format) parser
 │   └── s01-parse/
 │       ├── unifi-cef.yaml                 # UniFi CEF event enrichment
+│       ├── unifi-admin-auth.yaml          # UniFi admin auth failure parser
 │       └── dropbear-logs.yaml             # UDM SSH auth failure parser
 ├── scenarios/
 │   ├── iptables-scan-multi_ports.yaml     # TCP burst port scan detection
 │   ├── unifi-port-knock.yaml              # Sequential port-knock detection
 │   ├── unifi-flood-detection.yaml         # DDoS/flood attack detection (100+ drops/30s = 24h ban)
 │   ├── dropbear-bf.yaml                   # SSH brute force detection (UDM dropbear)
-│   └── unifi-ips-alert.yaml               # UniFi IPS/Threat Management detection
+│   ├── unifi-ips-alert.yaml               # UniFi IPS/Threat Management detection
+│   └── unifi-admin-bf.yaml                # UniFi admin brute force detection
 ├── collections/
 │   └── unifi.yaml                         # Collection bundle
 ├── acquis.d/

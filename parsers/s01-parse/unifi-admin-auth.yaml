@@ -1,0 +1,31 @@
+onsuccess: next_stage
+filter: "evt.Parsed.cef_device_vendor == 'Ubiquiti' && evt.Parsed.cef_device_product == 'UniFi Network' && evt.Parsed.cef_name in ['Admin Login Failed', 'Login Failed', 'Authentication Failed', 'Invalid credentials'] && ParseKVLax(evt.Parsed.message, evt.Unmarshaled, 'unifi') == nil"
+name: crowdsecurity/unifi-admin-auth
+description: "Parse UniFi admin authentication failure logs (CEF format)"
+statics:
+  - meta: service
+    value: unifi-admin
+  - meta: vendor
+    expression: evt.Parsed.cef_device_vendor
+  - meta: product
+    expression: evt.Parsed.cef_device_product
+  - meta: device_version
+    expression: evt.Parsed.cef_device_version
+  - meta: event_severity
+    expression: evt.Parsed.cef_severity
+  - meta: event_signature_id
+    expression: evt.Parsed.cef_signature_id
+  - meta: event_name
+    expression: evt.Parsed.cef_name
+  - meta: source_ip
+    expression: "evt.Unmarshaled.unifi.UNIFIsrcIp != nil ? evt.Unmarshaled.unifi.UNIFIsrcIp : (evt.Unmarshaled.unifi.src != nil ? evt.Unmarshaled.unifi.src : evt.Unmarshaled.unifi.sourceAddress)"
+  - meta: target_user
+    expression: "evt.Unmarshaled.unifi.UNIFIuser != nil ? evt.Unmarshaled.unifi.UNIFIuser : (evt.Unmarshaled.unifi.duser != nil ? evt.Unmarshaled.unifi.duser : evt.Unmarshaled.unifi.user)"
+  - meta: admin_user
+    expression: evt.Unmarshaled.unifi.UNIFIadmin
+  - meta: message
+    expression: evt.Unmarshaled.unifi.msg
+  - meta: log_type
+    value: unifi_admin_auth_failure
+  - target: evt.StrTime
+    expression: evt.Unmarshaled.unifi.UNIFIutcTime
