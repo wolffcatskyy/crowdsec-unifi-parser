@@ -116,6 +116,9 @@ success "Installed s01-parse/unifi-cef.yaml"
 cp "$SCRIPT_DIR/parsers/s01-parse/dropbear-logs.yaml" "$CROWDSEC_CONFIG_DIR/parsers/s01-parse/"
 success "Installed s01-parse/dropbear-logs.yaml"
 
+cp "$SCRIPT_DIR/parsers/s01-parse/unifi-admin-auth.yaml" "$CROWDSEC_CONFIG_DIR/parsers/s01-parse/"
+success "Installed s01-parse/unifi-admin-auth.yaml"
+
 # ---------------------------------------------------------------------------
 # Install scenarios
 # ---------------------------------------------------------------------------
@@ -137,6 +140,9 @@ success "Installed scenarios/dropbear-bf.yaml"
 
 cp "$SCRIPT_DIR/scenarios/unifi-ips-alert.yaml" "$CROWDSEC_CONFIG_DIR/scenarios/"
 success "Installed scenarios/unifi-ips-alert.yaml"
+
+cp "$SCRIPT_DIR/scenarios/unifi-admin-bf.yaml" "$CROWDSEC_CONFIG_DIR/scenarios/"
+success "Installed scenarios/unifi-admin-bf.yaml"
 
 # ---------------------------------------------------------------------------
 # Install collection
@@ -232,11 +238,13 @@ echo "  - parsers/s00-raw/unifi-logs.yaml    (raw UniFi syslog parser)"
 echo "  - parsers/s00-raw/cef-logs.yaml      (CEF format parser)"
 echo "  - parsers/s01-parse/unifi-cef.yaml   (UniFi CEF event parser)"
 echo "  - parsers/s01-parse/dropbear-logs.yaml (UDM SSH auth parser)"
+echo "  - parsers/s01-parse/unifi-admin-auth.yaml (UniFi admin auth parser)"
 echo "  - scenarios/iptables-scan-multi_ports.yaml (burst port scan detection)"
 echo "  - scenarios/unifi-port-knock.yaml    (sequential port scan detection)"
 echo "  - scenarios/unifi-flood-detection.yaml (DDoS/flood detection)"
 echo "  - scenarios/dropbear-bf.yaml         (SSH brute force detection)"
 echo "  - scenarios/unifi-ips-alert.yaml     (IPS/Threat Management detection)"
+echo "  - scenarios/unifi-admin-bf.yaml      (admin brute force detection)"
 echo "  - collections/unifi.yaml             (collection bundle)"
 echo "  - acquis.d/unifi.yaml                (log acquisition config)"
 echo ""

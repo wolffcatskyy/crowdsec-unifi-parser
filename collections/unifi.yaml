@@ -3,15 +3,17 @@ parsers:
   - crowdsecurity/cef-logs
   - crowdsecurity/unifi-cef
   - crowdsecurity/dropbear-logs
+  - crowdsecurity/unifi-admin-auth
 scenarios:
   - crowdsecurity/ssh-bf
   - crowdsecurity/dropbear-bf
   - crowdsecurity/unifi-ips-alert
   - crowdsecurity/unifi-port-knock
   - crowdsecurity/unifi-flood-detection
+  - crowdsecurity/unifi-admin-bf
 collections:
   - crowdsecurity/iptables
-description: "Unifi support: syslog + CEF parsers + port scan + sequential scan + SSH BF + IPS + DDoS/flood detection"
+description: "Unifi support: syslog + CEF parsers + port scan + sequential scan + SSH BF + IPS + DDoS/flood + admin console BF detection"
 author: crowdsecurity
 tags:
   - unifi
@@ -24,3 +26,4 @@ tags:
   - cef
   - ips
   - threat-management
+  - admin
