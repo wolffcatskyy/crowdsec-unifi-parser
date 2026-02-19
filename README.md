@@ -7,6 +7,9 @@
 
 ---
 
+> [!CAUTION]
+> **Beware of impostor repositories!** The official CrowdSec UniFi Parser is hosted at `wolffcatskyy/crowdsec-unifi-parser`. We do **not** distribute ZIP file downloads or executable installers. If you see a repo offering "one-click downloads" of this project, it may contain malware. Always install via the official instructions below.
+
 Get clean, CrowdSec-parseable firewall logs from UniFi Dream Machines -- no more syslog noise.
 
 Deploys targeted iptables LOG rules on your UDM/UDR and provides custom CrowdSec parsers that extract source IP, destination IP, port, protocol, zone, and action from every dropped packet.
