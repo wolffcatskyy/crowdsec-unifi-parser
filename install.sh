@@ -13,32 +13,20 @@
 
 set -euo pipefail
 
-# ---------------------------------------------------------------------------
-# Colors
-# ---------------------------------------------------------------------------
-
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
 info()    { echo -e "${BLUE}[INFO]${NC} $*"; }
 success() { echo -e "${GREEN}[OK]${NC} $*"; }
 warn()    { echo -e "${YELLOW}[WARN]${NC} $*"; }
 error()   { echo -e "${RED}[ERROR]${NC} $*" >&2; }
 
-# ---------------------------------------------------------------------------
-# Defaults
-# ---------------------------------------------------------------------------
-
 CROWDSEC_CONFIG_DIR="/etc/crowdsec"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 WITH_DEPLOY=false
-
-# ---------------------------------------------------------------------------
-# Parse arguments
-# ---------------------------------------------------------------------------
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -68,39 +56,29 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# ---------------------------------------------------------------------------
 # Pre-flight checks
-# ---------------------------------------------------------------------------
-
 info "CrowdSec UniFi Parser Installer"
 echo ""
 
-# Check if CrowdSec config directory exists
 if [[ ! -d "$CROWDSEC_CONFIG_DIR" ]]; then
     error "CrowdSec config directory not found: $CROWDSEC_CONFIG_DIR"
     error "Is CrowdSec installed? Try: --config-dir /path/to/crowdsec/config"
     exit 1
 fi
 
-# Check if we're running as root (needed to write to /etc/crowdsec)
 if [[ $EUID -ne 0 ]]; then
     warn "Not running as root. You may get permission errors."
     warn "Re-run with: sudo $0 $*"
 fi
 
-# Check if cscli is available
 if ! command -v cscli &> /dev/null; then
     warn "cscli not found in PATH. Will install files manually."
     warn "If CrowdSec is in Docker, you may need to copy files into the container."
 fi
 
-# ---------------------------------------------------------------------------
 # Install parsers
-# ---------------------------------------------------------------------------
-
 info "Installing parsers..."
 
-# s00-raw parsers
 mkdir -p "$CROWDSEC_CONFIG_DIR/parsers/s00-raw"
 cp "$SCRIPT_DIR/parsers/s00-raw/unifi-logs.yaml" "$CROWDSEC_CONFIG_DIR/parsers/s00-raw/"
 success "Installed s00-raw/unifi-logs.yaml"
@@ -108,7 +86,6 @@ success "Installed s00-raw/unifi-logs.yaml"
 cp "$SCRIPT_DIR/parsers/s00-raw/cef-logs.yaml" "$CROWDSEC_CONFIG_DIR/parsers/s00-raw/"
 success "Installed s00-raw/cef-logs.yaml"
 
-# s01-parse parsers
 mkdir -p "$CROWDSEC_CONFIG_DIR/parsers/s01-parse"
 cp "$SCRIPT_DIR/parsers/s01-parse/unifi-cef.yaml" "$CROWDSEC_CONFIG_DIR/parsers/s01-parse/"
 success "Installed s01-parse/unifi-cef.yaml"
@@ -119,10 +96,7 @@ success "Installed s01-parse/dropbear-logs.yaml"
 cp "$SCRIPT_DIR/parsers/s01-parse/unifi-admin-auth.yaml" "$CROWDSEC_CONFIG_DIR/parsers/s01-parse/"
 success "Installed s01-parse/unifi-admin-auth.yaml"
 
-# ---------------------------------------------------------------------------
 # Install scenarios
-# ---------------------------------------------------------------------------
-
 info "Installing scenarios..."
 
 mkdir -p "$CROWDSEC_CONFIG_DIR/scenarios"
@@ -144,20 +118,14 @@ success "Installed scenarios/unifi-ips-alert.yaml"
 cp "$SCRIPT_DIR/scenarios/unifi-admin-bf.yaml" "$CROWDSEC_CONFIG_DIR/scenarios/"
 success "Installed scenarios/unifi-admin-bf.yaml"
 
-# ---------------------------------------------------------------------------
 # Install collection
-# ---------------------------------------------------------------------------
-
 info "Installing collection..."
 
 mkdir -p "$CROWDSEC_CONFIG_DIR/collections"
 cp "$SCRIPT_DIR/collections/unifi.yaml" "$CROWDSEC_CONFIG_DIR/collections/"
 success "Installed collections/unifi.yaml"
 
-# ---------------------------------------------------------------------------
 # Install acquisition config
-# ---------------------------------------------------------------------------
-
 info "Installing acquisition config..."
 
 mkdir -p "$CROWDSEC_CONFIG_DIR/acquis.d"
@@ -174,10 +142,7 @@ echo ""
 warn "IMPORTANT: Edit $CROWDSEC_CONFIG_DIR/acquis.d/unifi.yaml to match your log path!"
 echo ""
 
-# ---------------------------------------------------------------------------
 # Reload CrowdSec
-# ---------------------------------------------------------------------------
-
 if command -v cscli &> /dev/null; then
     info "Reloading CrowdSec..."
     if systemctl is-active --quiet crowdsec 2>/dev/null; then
@@ -193,10 +158,7 @@ else
     warn "cscli not found. Restart CrowdSec manually to load new parsers."
 fi
 
-# ---------------------------------------------------------------------------
-# Optional: Deploy LOG rules to UDM
-# ---------------------------------------------------------------------------
-
+# Deploy LOG rules to UDM (optional)
 if [[ "$WITH_DEPLOY" == "true" ]]; then
     echo ""
     info "Deploying LOG rules to UDM..."
@@ -224,35 +186,29 @@ if [[ "$WITH_DEPLOY" == "true" ]]; then
     python3 "$SCRIPT_DIR/deploy-log-rules.py" --host "$UDM_HOST" --user "$UDM_USER" --pass "$UDM_PASS"
 fi
 
-# ---------------------------------------------------------------------------
 # Summary
-# ---------------------------------------------------------------------------
-
 echo ""
-echo "=================================================="
 echo -e "${GREEN}Installation complete!${NC}"
-echo "=================================================="
 echo ""
 echo "Installed:"
-echo "  - parsers/s00-raw/unifi-logs.yaml    (raw UniFi syslog parser)"
-echo "  - parsers/s00-raw/cef-logs.yaml      (CEF format parser)"
-echo "  - parsers/s01-parse/unifi-cef.yaml   (UniFi CEF event parser)"
-echo "  - parsers/s01-parse/dropbear-logs.yaml (UDM SSH auth parser)"
-echo "  - parsers/s01-parse/unifi-admin-auth.yaml (UniFi admin auth parser)"
-echo "  - scenarios/iptables-scan-multi_ports.yaml (burst port scan detection)"
-echo "  - scenarios/unifi-port-knock.yaml    (sequential port scan detection)"
-echo "  - scenarios/unifi-flood-detection.yaml (DDoS/flood detection)"
-echo "  - scenarios/dropbear-bf.yaml         (SSH brute force detection)"
-echo "  - scenarios/unifi-ips-alert.yaml     (IPS/Threat Management detection)"
-echo "  - scenarios/unifi-admin-bf.yaml      (admin brute force detection)"
-echo "  - collections/unifi.yaml             (collection bundle)"
-echo "  - acquis.d/unifi.yaml                (log acquisition config)"
+echo "  - parsers/s00-raw/unifi-logs.yaml"
+echo "  - parsers/s00-raw/cef-logs.yaml"
+echo "  - parsers/s01-parse/unifi-cef.yaml"
+echo "  - parsers/s01-parse/dropbear-logs.yaml"
+echo "  - parsers/s01-parse/unifi-admin-auth.yaml"
+echo "  - scenarios/iptables-scan-multi_ports.yaml"
+echo "  - scenarios/unifi-port-knock.yaml"
+echo "  - scenarios/unifi-flood-detection.yaml"
+echo "  - scenarios/dropbear-bf.yaml"
+echo "  - scenarios/unifi-ips-alert.yaml"
+echo "  - scenarios/unifi-admin-bf.yaml"
+echo "  - collections/unifi.yaml"
+echo "  - acquis.d/unifi.yaml"
 echo ""
 echo "Next steps:"
 echo "  1. Edit $CROWDSEC_CONFIG_DIR/acquis.d/unifi.yaml (set your log path)"
 echo "  2. Deploy LOG rules on your UDM:"
 echo "     python3 deploy-log-rules.py --host <UDM_IP> --pass <PASSWORD>"
 echo "  3. Set up syslog forwarding from UDM to your CrowdSec host"
-echo "  4. Restart CrowdSec and verify:"
-echo "     cscli metrics"
+echo "  4. Restart CrowdSec and verify: cscli metrics"
 echo ""

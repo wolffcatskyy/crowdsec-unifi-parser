@@ -2,39 +2,11 @@
 """
 deploy-log-rules.py — Deploy iptables LOG rules on UniFi Dream Machines for CrowdSec visibility.
 
-PURPOSE:
-    Inserts iptables LOG rules immediately before every DROP rule in the UDM's
-    WAN-facing firewall chains. This gives CrowdSec (and kern.log) visibility into
-    blocked traffic without changing any actual firewall behavior.
+Inserts LOG rules before every DROP rule in the UDM's WAN-facing firewall chains,
+giving CrowdSec visibility into blocked traffic without changing firewall behavior.
 
-WHEN TO RUN:
-    - After every UDM firmware update (UniFi regenerates iptables on upgrade)
-    - After CrowdSec bouncer restarts that rebuild firewall rules
-    - After any manual iptables changes on the UDM
-    - Idempotent: safe to run repeatedly; cleans up old rules first
-
-WHAT IT DOES:
-    1. SSHes into UDM via paramiko keyboard-interactive auth
-    2. Removes all existing CROWDSEC_LOG-commented iptables rules (idempotent cleanup)
-    3. Enumerates DROP rules in these chains:
-         UBIOS_WAN_LOCAL_USER, UBIOS_WAN_LAN_USER, UBIOS_WAN_IN_USER,
-         UBIOS_WAN_DMZ_USER, UBIOS_WAN_GUEST_USER, UBIOS_WAN_VPN_USER,
-         UBIOS_WAN_WAN_USER
-    4. Inserts a LOG rule immediately before each DROP rule with:
-         - Rate limit: 10/min burst 20
-         - Comment: CROWDSEC_LOG
-         - Prefix: [UNIFI-{chain_short}-D-{INVALID|ALL}]
-         - Log level 4 (warning)
-    5. Inserts from bottom to top within each chain to preserve rule indices
-    6. Verifies rules were inserted and reports results
-
-LOG FORMAT EXAMPLES:
-    [UNIFI-WAN_LOCAL-D-INVALID] — conntrack INVALID state drop
-    [UNIFI-WAN_LAN-D-ALL]      — catch-all drop at chain end
-
-EXIT CODES:
-    0 — Success (rules deployed and verified)
-    1 — Failure (SSH error, iptables error, verification failed)
+Idempotent: cleans up old CROWDSEC_LOG rules before inserting new ones.
+Re-run after firmware updates (UniFi regenerates iptables on upgrade).
 """
 
 import sys
@@ -49,10 +21,6 @@ try:
 except ImportError:
     print("ERROR: paramiko not installed. Install with: pip3 install paramiko", file=sys.stderr)
     sys.exit(1)
-
-# ---------------------------------------------------------------------------
-# Configuration
-# ---------------------------------------------------------------------------
 
 CHAINS = [
     "UBIOS_WAN_LOCAL_USER",
@@ -69,10 +37,6 @@ RATE_LIMIT = "10/min"
 RATE_BURST = "20"
 LOG_LEVEL = "4"
 
-# ---------------------------------------------------------------------------
-# Logging setup
-# ---------------------------------------------------------------------------
-
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
@@ -80,13 +44,8 @@ logging.basicConfig(
 )
 log = logging.getLogger("deploy-log-rules")
 
-# ---------------------------------------------------------------------------
-# CLI argument parsing
-# ---------------------------------------------------------------------------
-
 
 def parse_args():
-    """Parse command-line arguments for UDM connection details."""
     parser = argparse.ArgumentParser(
         description="Deploy iptables LOG rules on UniFi Dream Machines for CrowdSec visibility.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -147,28 +106,17 @@ Examples:
     return args
 
 
-# ---------------------------------------------------------------------------
-# SSH helpers
-# ---------------------------------------------------------------------------
-
-
 def create_ssh_client(host, port, user, password):
-    """Create and return an authenticated paramiko SSH client to the UDM.
-
-    Uses keyboard-interactive authentication, which is the method the UDM
-    expects for root login.
-    """
+    """Connect to UDM via keyboard-interactive auth, falling back to password auth."""
     client = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-    # keyboard-interactive handler: responds to all prompts with the password
     def kb_interactive_handler(title, instructions, prompt_list):
         return [password] * len(prompt_list)
 
     log.info("Connecting to UDM at %s:%d as %s ...", host, port, user)
 
     try:
-        # Attempt transport-level connect for keyboard-interactive
         transport = paramiko.Transport((host, port))
         transport.connect()
         transport.auth_interactive(user, kb_interactive_handler)
@@ -181,7 +129,6 @@ def create_ssh_client(host, port, user, password):
             transport.close()
         except Exception:
             pass
-        # Fallback to password auth
         client.connect(
             host,
             port=port,
@@ -214,7 +161,6 @@ def run_cmd(client, cmd, timeout=30):
         if channel.recv_stderr_ready():
             stderr_chunks.append(channel.recv_stderr(65536).decode("utf-8", errors="replace"))
         if channel.exit_status_ready():
-            # Drain remaining data
             while channel.recv_ready():
                 stdout_chunks.append(channel.recv(65536).decode("utf-8", errors="replace"))
             while channel.recv_stderr_ready():
@@ -229,7 +175,7 @@ def run_cmd(client, cmd, timeout=30):
 
 
 def run_cmd_checked(client, cmd, description="command", timeout=30):
-    """Run a command, log it, and raise on non-zero exit."""
+    """Run a command and raise on non-zero exit."""
     exit_code, stdout, stderr = run_cmd(client, cmd, timeout=timeout)
     if exit_code != 0:
         log.error("%s failed (exit %d): %s", description, exit_code, stderr.strip())
@@ -237,13 +183,8 @@ def run_cmd_checked(client, cmd, description="command", timeout=30):
     return stdout
 
 
-# ---------------------------------------------------------------------------
-# Chain name helpers
-# ---------------------------------------------------------------------------
-
-
 def chain_to_short(chain_name):
-    """Convert UBIOS_WAN_LOCAL_USER -> WAN_LOCAL etc."""
+    """UBIOS_WAN_LOCAL_USER -> WAN_LOCAL"""
     short = chain_name
     if short.startswith("UBIOS_"):
         short = short[6:]
@@ -252,16 +193,10 @@ def chain_to_short(chain_name):
     return short
 
 
-# ---------------------------------------------------------------------------
-# Core logic
-# ---------------------------------------------------------------------------
-
-
 def cleanup_existing_rules(client, dry_run=False):
     """Remove all iptables rules with the CROWDSEC_LOG comment marker.
 
     Iterates multiple passes because removing a rule shifts indices.
-    Returns the total number of rules removed.
     """
     total_removed = 0
 
@@ -273,7 +208,6 @@ def cleanup_existing_rules(client, dry_run=False):
                 log.error("Cleanup loop exceeded 200 passes for %s, aborting", chain)
                 break
 
-            # List rules with line numbers
             exit_code, stdout, stderr = run_cmd(
                 client, f"iptables -L {chain} --line-numbers -n 2>/dev/null"
             )
@@ -281,7 +215,6 @@ def cleanup_existing_rules(client, dry_run=False):
                 log.warning("Chain %s does not exist or cannot be listed, skipping cleanup", chain)
                 break
 
-            # Find first line with our marker (always delete lowest index first)
             found = False
             for line in stdout.splitlines():
                 if COMMENT_MARKER in line:
@@ -306,14 +239,7 @@ def cleanup_existing_rules(client, dry_run=False):
 
 
 def parse_drop_rules(client, chain):
-    """Parse a chain and return a list of DROP rule dicts with their indices.
-
-    Each dict has:
-        index:      int (1-based rule number)
-        is_invalid: bool (True if rule matches conntrack INVALID state)
-        raw:        str (raw iptables -S output line, for debugging)
-    """
-    # Use iptables -S to get machine-parseable output
+    """Return list of DROP rule dicts with index, is_invalid, and raw line."""
     exit_code, stdout, stderr = run_cmd(client, f"iptables -S {chain} 2>/dev/null")
     if exit_code != 0:
         log.warning("Chain %s does not exist, skipping", chain)
@@ -324,7 +250,6 @@ def parse_drop_rules(client, chain):
 
     for line in stdout.splitlines():
         line = line.strip()
-        # -S output lines starting with -A are actual rules in the chain
         if not line.startswith("-A "):
             continue
         rule_index += 1
@@ -343,38 +268,25 @@ def parse_drop_rules(client, chain):
 
 
 def build_log_command(chain, drop_rule):
-    """Build the full iptables command string to insert a LOG rule before a DROP rule.
-
-    Replicates the DROP rule's match criteria so the LOG rule fires on the
-    same packets, then appends rate limiting, comment, and LOG target.
-    """
+    """Build iptables INSERT command for a LOG rule matching a DROP rule's criteria."""
     short = chain_to_short(chain)
     suffix = "INVALID" if drop_rule["is_invalid"] else "ALL"
     prefix = f"[UNIFI-{short}-D-{suffix}]"
 
     raw = drop_rule["raw"]
 
-    # Extract the match portion from the raw -S line:
-    #   -A CHAINNAME [match criteria] -j DROP
-    # Strip "-A CHAINNAME" from the front
+    # Extract match criteria: strip "-A CHAINNAME" and "-j DROP"
     match_portion = re.sub(r"^-A\s+\S+\s*", "", raw)
-    # Strip "-j DROP" (and any trailing content) from the end
     match_portion = re.sub(r"\s*-j\s+DROP.*$", "", match_portion)
     match_portion = match_portion.strip()
 
-    # Build the iptables insert command
     cmd_parts = [f"iptables -I {chain} {drop_rule['index']}"]
 
     if match_portion:
         cmd_parts.append(match_portion)
 
-    # Rate limit module
     cmd_parts.append(f"-m limit --limit {RATE_LIMIT} --limit-burst {RATE_BURST}")
-
-    # Comment module
     cmd_parts.append(f'-m comment --comment "{COMMENT_MARKER}"')
-
-    # LOG target
     cmd_parts.append(f'-j LOG --log-prefix "{prefix} " --log-level {LOG_LEVEL}')
 
     return " ".join(cmd_parts)
@@ -384,7 +296,6 @@ def deploy_log_rules(client, dry_run=False):
     """Deploy LOG rules before every DROP rule in all configured chains.
 
     Inserts from bottom to top within each chain to preserve rule indices.
-    Returns (deployed_count, chain_summary_dict).
     """
     total_deployed = 0
     chain_summary = {}
@@ -401,9 +312,7 @@ def deploy_log_rules(client, dry_run=False):
 
         log.info("  Found %d DROP rule(s) in %s", len(drop_rules), chain)
 
-        # Insert from bottom to top to preserve rule indices.
-        # When we insert at index N, all rules at N and above shift down by 1.
-        # By processing highest index first, we avoid affecting lower indices.
+        # Insert from bottom to top so earlier indices aren't shifted
         chain_deployed = 0
         for drop_rule in reversed(drop_rules):
             cmd = build_log_command(chain, drop_rule)
@@ -431,10 +340,7 @@ def deploy_log_rules(client, dry_run=False):
 
 
 def verify_rules(client):
-    """Verify CROWDSEC_LOG rules are present in all chains.
-
-    Returns total count of verified LOG rules.
-    """
+    """Count CROWDSEC_LOG rules present across all chains."""
     total_found = 0
     for chain in CHAINS:
         exit_code, stdout, _ = run_cmd(client, f"iptables -S {chain} 2>/dev/null")
@@ -449,10 +355,7 @@ def verify_rules(client):
 
 
 def check_kern_log(client):
-    """Check for recent UNIFI log entries in kern.log/messages.
-
-    Returns (sample_lines_str, logpath) or (None, None) if nothing found.
-    """
+    """Look for recent UNIFI log entries. Returns (lines, logpath) or (None, None)."""
     for logpath in ["/var/log/messages", "/var/log/kern.log", "/var/log/syslog"]:
         exit_code, stdout, _ = run_cmd(
             client,
@@ -464,32 +367,24 @@ def check_kern_log(client):
     return None, None
 
 
-# ---------------------------------------------------------------------------
-# Main
-# ---------------------------------------------------------------------------
-
-
 def main():
     args = parse_args()
 
     if args.verbose:
         logging.getLogger().setLevel(logging.DEBUG)
 
-    log.info("=" * 70)
-    log.info("UDM — Deploy CrowdSec iptables LOG rules")
+    log.info("UDM -- Deploy CrowdSec iptables LOG rules")
     if args.dry_run:
-        log.info("*** DRY RUN MODE — no changes will be made ***")
-    log.info("=" * 70)
+        log.info("*** DRY RUN MODE -- no changes will be made ***")
 
     client = None
     try:
-        # ----- Step 1: Connect -----
         client = create_ssh_client(args.host, args.port, args.user, args.password)
 
         hostname = run_cmd_checked(client, "hostname", "hostname check").strip()
         log.info("Connected to: %s", hostname)
 
-        # ----- Step 2: Cleanup existing rules (idempotent) -----
+        # Phase 1: Cleanup
         log.info("")
         log.info("--- Phase 1: Cleanup existing CROWDSEC_LOG rules ---")
         removed = cleanup_existing_rules(client, dry_run=args.dry_run)
@@ -498,12 +393,12 @@ def main():
         else:
             log.info("No existing CROWDSEC_LOG rules to remove (clean slate)")
 
-        # ----- Step 3: Deploy new LOG rules -----
+        # Phase 2: Deploy
         log.info("")
         log.info("--- Phase 2: Deploy LOG rules before DROP rules ---")
         deployed, chain_summary = deploy_log_rules(client, dry_run=args.dry_run)
 
-        # ----- Step 4: Verify -----
+        # Phase 3: Verify
         log.info("")
         log.info("--- Phase 3: Verification ---")
         if args.dry_run:
@@ -512,7 +407,7 @@ def main():
         else:
             verified = verify_rules(client)
 
-        # ----- Step 5: Check for log entries -----
+        # Phase 4: Check logs
         log.info("")
         log.info("--- Phase 4: Check kern.log for entries ---")
         sample_lines, logpath = check_kern_log(client)
@@ -524,11 +419,9 @@ def main():
             log.info("No UNIFI log entries found yet (normal if just deployed)")
             log.info("Entries will appear in kern.log/messages when traffic hits DROP rules")
 
-        # ----- Summary -----
+        # Summary
         log.info("")
-        log.info("=" * 70)
         log.info("SUMMARY%s", " (DRY RUN)" if args.dry_run else "")
-        log.info("=" * 70)
         log.info("Rules removed (cleanup):  %d", removed)
         log.info("Rules deployed:           %d", deployed)
         log.info("Rules verified:           %d", verified)

@@ -2,10 +2,7 @@
 
 [![Mentioned in Awesome UniFi](https://awesome.re/mentioned-badge.svg)](https://github.com/wolffcatskyy/awesome-unifi)
 
----
-**Note:** This project was developed with and is supported by AI. Issues and PRs are triaged and responded to by AI agents. If you need a human just ask, but honestly AI is faster, smarter, and nicer.
-
----
+**Note:** Issues and PRs are triaged by AI agents. If you need a human, just ask.
 
 > [!CAUTION]
 > **Beware of impostor repositories!** The official CrowdSec UniFi Parser is hosted at `wolffcatskyy/crowdsec-unifi-parser`. We do **not** distribute ZIP file downloads or executable installers. If you see a repo offering "one-click downloads" of this project, it may contain malware. Always install via the official instructions below.
@@ -13,8 +10,6 @@
 Get clean, CrowdSec-parseable firewall logs from UniFi Dream Machines -- no more syslog noise.
 
 Deploys targeted iptables LOG rules on your UDM/UDR and provides custom CrowdSec parsers that extract source IP, destination IP, port, protocol, zone, and action from every dropped packet.
-
-> **New to CrowdSec?** [CrowdSec](https://crowdsec.net) is a free, open-source security engine that detects and blocks malicious IPs. It works like fail2ban but with crowd-sourced threat intelligence and a modern bouncer ecosystem. Install it, connect bouncers to your firewalls/proxies, and threats get blocked network-wide. Get started with the [official install guide](https://docs.crowdsec.net/docs/getting_started/install_crowdsec/).
 
 ## What You Need
 
@@ -344,8 +339,8 @@ services:
 
 ```
 crowdsec-unifi-parser/
-├── README.md                              # This file
-├── LICENSE                                # MIT
+├── README.md
+├── LICENSE
 ├── deploy-log-rules.py                    # iptables LOG rule deployer (runs on UDM via SSH)
 ├── install.sh                             # One-command installer
 ├── parsers/
@@ -377,19 +372,10 @@ crowdsec-unifi-parser/
 After installation, check CrowdSec metrics:
 
 ```bash
-# Check acquisition (are logs being read?)
 cscli metrics | grep unifi
-
-# Check parser success rate
 cscli metrics show parsers
-
-# Check for alerts
 cscli alerts list
-
-# Watch logs in real time
 tail -f /var/log/unifi/unifi-fw.log
-
-# Test the full pipeline
 cscli explain --file /var/log/unifi/unifi-fw.log --type unifi
 ```
 

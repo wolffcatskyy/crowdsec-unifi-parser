@@ -4,15 +4,13 @@
 
 set -e
 
-echo "=============================================="
 echo "UDR CrowdSec LOG Rules Deployment"
-echo "=============================================="
 echo ""
 
 # Configuration
 UDR_HOST="${UDR_HOST:-192.168.21.1}"
 UDR_USER="${UDR_USER:-root}"
-UDR_PASS="${UDR_PASS:-!#o#It0S!#o#It0S}"
+UDR_PASS="${UDR_PASS:?Set UDR_PASS environment variable}"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "Target: $UDR_USER@$UDR_HOST"
@@ -41,7 +39,7 @@ else
 fi
 
 echo ""
-echo "====== DRY RUN (Preview) ======"
+echo "--- Dry Run (Preview) ---"
 python3 "$SCRIPT_DIR/deploy-log-rules.py" \
     --host "$UDR_HOST" \
     --user "$UDR_USER" \
@@ -49,7 +47,7 @@ python3 "$SCRIPT_DIR/deploy-log-rules.py" \
     --dry-run
 
 echo ""
-echo "====== ACTUAL DEPLOYMENT ======"
+echo "--- Deployment ---"
 read -p "Proceed with deployment? (y/N): " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]; then
@@ -59,7 +57,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
         --pass "$UDR_PASS"
 
     echo ""
-    echo "====== NEXT STEPS ======"
+    echo "--- Next Steps ---"
     echo "1. Configure syslog forwarding on UDR:"
     echo "   Settings > System > Logging > Remote Logging"
     echo "   Server: 192.168.18.10"
