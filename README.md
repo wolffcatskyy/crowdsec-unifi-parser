@@ -150,7 +150,7 @@ sudo cp collections/unifi.yaml /etc/crowdsec/collections/
 sudo cp acquis.d/unifi.yaml /etc/crowdsec/acquis.d/
 
 # Edit the log path to match your setup
-sudo nano /etc/crowdsec/acquis.d/unifi.yaml
+sudo $EDITOR /etc/crowdsec/acquis.d/unifi.yaml
 ```
 
 ### 5. Reload CrowdSec
