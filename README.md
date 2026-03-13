@@ -413,17 +413,13 @@ python3 deploy-log-rules.py --host 192.168.1.1 --pass YOUR_PASSWORD
 
 Consider adding this to a cron job or running it as part of your firmware update procedure.
 
-## Complete UniFi + CrowdSec Suite
+## Part of the CrowdSec UniFi Ecosystem
 
-This parser is part of a three-project suite that gives UniFi full CrowdSec integration:
-
-| Project | Role | What it does |
-|---------|------|-------------|
-| **This repo** | Visibility | Deploys iptables LOG rules on your UDM/UDR so CrowdSec can detect port scans, brute force, and other threats from your firewall logs |
-| **[crowdsec-blocklist-import](https://github.com/wolffcatskyy/crowdsec-blocklist-import)** | Intelligence | Imports 120,000+ IPs from 36 public threat feeds into CrowdSec — preemptive blocking before attackers even connect |
-| **[crowdsec-unifi-bouncer](https://github.com/wolffcatskyy/crowdsec-unifi-bouncer)** | Enforcement | Pushes CrowdSec ban decisions to your UniFi firewall via ipset/iptables — 100k+ IPs, 15MB RAM, survives firmware updates |
-
-Together: this **parser** detects threats, **blocklist-import** feeds threat intel, and the **bouncer** enforces bans. A complete detect → decide → enforce feedback loop on UniFi hardware for free.
+| Project | Description |
+|---------|-------------|
+| [crowdsec-unifi-suite](https://github.com/wolffcatskyy/crowdsec-unifi-suite) | One-command installer for the full stack |
+| [crowdsec-unifi-bouncer](https://github.com/wolffcatskyy/crowdsec-unifi-bouncer) | Enforce CrowdSec decisions on UniFi firewalls |
+| [crowdsec-blocklist-import](https://github.com/wolffcatskyy/crowdsec-blocklist-import) | Import 28+ threat feeds into CrowdSec |
 
 ## Requirements
 
