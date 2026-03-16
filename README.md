@@ -1,5 +1,7 @@
 # CrowdSec UniFi Parser
 
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/wolffcatskyy?label=Sponsor&logo=github&color=ea4aaa)](https://github.com/sponsors/wolffcatskyy)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/wolffcatskyy)
 [![Mentioned in Awesome UniFi](https://awesome.re/mentioned-badge.svg)](https://github.com/wolffcatskyy/awesome-unifi)
 
 ---
