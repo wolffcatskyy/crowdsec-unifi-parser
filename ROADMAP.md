@@ -1,5 +1,15 @@
 # Roadmap
 
+_Refreshed September 23, 2026. Plans, not promises: priorities can shift with user feedback._
+
+- Next: fixture-based regression tests for firewall LOG, CEF, IDS/IPS, admin auth, IPv6, and firmware variants.
+- Then: publish a CrowdSec Hub collection and metrics for parse success/drop reasons.
+- Later: align installation and health checks with unifi-suite.
+
+---
+
+## Earlier roadmap notes
+
 ## Current Status
 
 **Version**: v1.0.0 (stable release)
