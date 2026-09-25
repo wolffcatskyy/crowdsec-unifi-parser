@@ -41,6 +41,7 @@ import sys
 import os
 import re
 import time
+import getpass
 import logging
 import argparse
 
@@ -94,13 +95,23 @@ def parse_args():
 Environment variables (override defaults, overridden by CLI args):
   UDM_HOST     UDM IP address (default: 192.168.1.1)
   UDM_USER     SSH username (default: root)
-  UDM_PASS     SSH password (required if not passed via --pass)
+  UDM_PASS     SSH password (prompted securely if neither --pass nor UDM_PASS is set)
   UDM_PORT     SSH port (default: 22)
 
+Passwords with special characters:
+  If your password contains characters like & | < > ^ %% $ ` " ' or spaces,
+  passing it with --pass lets your SHELL parse it before this script sees it.
+  The mangled password then fails authentication. Run without --pass to be
+  prompted securely (recommended), or quote it for your shell:
+    Windows cmd:     --pass "your password"
+    PowerShell:      --pass 'your password'
+    Linux/macOS:     --pass 'your password'
+
 Examples:
-  %(prog)s --host 192.168.1.1 --pass MyPassword
+  %(prog)s --host 192.168.1.1
+  %(prog)s --host 192.168.1.1 --pass 'MyP&ssw0rd!'
   UDM_PASS=MyPassword %(prog)s --host 10.0.0.1
-  %(prog)s --host 192.168.1.1 --pass MyPassword --dry-run
+  %(prog)s --host 192.168.1.1 --dry-run
 """,
     )
     parser.add_argument(
@@ -139,10 +150,18 @@ Examples:
     args = parser.parse_args()
 
     if not args.password:
-        parser.error(
-            "SSH password required. Use --pass, set UDM_PASS environment variable, "
-            "or pass it via stdin."
-        )
+        # Prompt securely instead of requiring --pass: a password typed at the
+        # prompt never passes through a shell, so special characters survive
+        # exactly as entered (fixes sephdoto's report in issue #6).
+        try:
+            args.password = getpass.getpass("UDM SSH password: ")
+        except (EOFError, KeyboardInterrupt):
+            parser.error(
+                "SSH password required. Use --pass, set UDM_PASS environment variable, "
+                "or run interactively to be prompted."
+            )
+    if not args.password:
+        parser.error("SSH password must not be empty.")
 
     return args
 
@@ -182,15 +201,24 @@ def create_ssh_client(host, port, user, password):
         except Exception:
             pass
         # Fallback to password auth
-        client.connect(
-            host,
-            port=port,
-            username=user,
-            password=password,
-            look_for_keys=False,
-            allow_agent=False,
-            timeout=15,
-        )
+        try:
+            client.connect(
+                host,
+                port=port,
+                username=user,
+                password=password,
+                look_for_keys=False,
+                allow_agent=False,
+                timeout=15,
+            )
+        except paramiko.AuthenticationException:
+            raise paramiko.AuthenticationException(
+                "Authentication failed with both keyboard-interactive and password auth. "
+                "If the password contains special characters and was passed via --pass "
+                "or UDM_PASS, the shell may have mangled it before it reached this script. "
+                "Run without --pass to be prompted securely, or quote it for your shell "
+                "(see --help)."
+            )
         log.info("SSH connection established (password auth)")
         return client
 
