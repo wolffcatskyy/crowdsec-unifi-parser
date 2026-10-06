@@ -4,10 +4,6 @@
 [![Ko-fi](https://img.shields.io/badge/Ko--fi-Support-FF5E5B?logo=ko-fi&logoColor=white)](https://ko-fi.com/wolffcatskyy)
 [![Mentioned in Awesome UniFi](https://awesome.re/mentioned-badge.svg)](https://github.com/wolffcatskyy/awesome-unifi)
 
----
-**Note:** This project was developed with and is supported by AI. Issues and PRs are triaged and responded to by AI agents. If you need a human just ask, but honestly AI is faster, smarter, and nicer.
-
----
 
 > [!CAUTION]
 > **Beware of impostor repositories!** The official CrowdSec UniFi Parser is hosted at `wolffcatskyy/crowdsec-unifi-parser`. We do **not** distribute ZIP file downloads or executable installers. If you see a repo offering "one-click downloads" of this project, it may contain malware. Always install via the official instructions below.
