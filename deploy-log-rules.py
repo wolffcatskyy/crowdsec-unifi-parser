@@ -294,6 +294,23 @@ def cleanup_existing_rules(client, dry_run=False):
     total_removed = 0
 
     for chain in CHAINS:
+        if dry_run:
+            exit_code, stdout, stderr = run_cmd(
+                client, f"iptables -L {chain} --line-numbers -n 2>/dev/null"
+            )
+            if exit_code != 0:
+                log.warning("Chain %s does not exist or cannot be listed, skipping cleanup", chain)
+                continue
+
+            for line in stdout.splitlines():
+                if COMMENT_MARKER in line:
+                    parts = line.split()
+                    if parts and parts[0].isdigit():
+                        rule_num = parts[0]
+                        log.info("  [DRY RUN] Would remove rule #%s from %s", rule_num, chain)
+                        total_removed += 1
+            continue
+
         pass_count = 0
         while True:
             pass_count += 1
@@ -316,13 +333,10 @@ def cleanup_existing_rules(client, dry_run=False):
                     parts = line.split()
                     if parts and parts[0].isdigit():
                         rule_num = parts[0]
-                        if dry_run:
-                            log.info("  [DRY RUN] Would remove rule #%s from %s", rule_num, chain)
-                        else:
-                            log.info("  Removing rule #%s from %s", rule_num, chain)
-                            rc, _, err = run_cmd(client, f"iptables -D {chain} {rule_num}")
-                            if rc != 0:
-                                log.error("  Failed to remove rule #%s from %s: %s", rule_num, chain, err)
+                        log.info("  Removing rule #%s from %s", rule_num, chain)
+                        rc, _, err = run_cmd(client, f"iptables -D {chain} {rule_num}")
+                        if rc != 0:
+                            log.error("  Failed to remove rule #%s from %s: %s", rule_num, chain, err)
                         total_removed += 1
                         found = True
                         break  # Restart scan since indices shifted
