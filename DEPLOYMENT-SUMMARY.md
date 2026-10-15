@@ -4,7 +4,7 @@
 2026-02-03
 
 ## Objective
-Deploy iptables LOG rules on UniFi Dream Router (UDR) at <UDM_SE_IP> / <UDR_WAN_IP> for CrowdSec visibility.
+Deploy iptables LOG rules on UniFi Dream Router (UDR) at <UDR_WAN_IP> / <UDR_LAN_IP> for CrowdSec visibility.
 
 ## Status
 **BLOCKED** - Awaiting SSH access resolution
@@ -14,25 +14,25 @@ Deploy iptables LOG rules on UniFi Dream Router (UDR) at <UDM_SE_IP> / <UDR_WAN_
 ### 1. Environment Setup
 - Installed paramiko on macpro: `python3 -m pip install --user paramiko`
 - Verified deploy script at `/private/tmp/crowdsec-unifi-parser/deploy-log-rules.py`
-- Script is working (previously deployed successfully on UDM SE at <UDR_LAN_IP>)
+- Script is working (previously deployed successfully on UDM SE at <UDM_SE_IP>)
 
 ### 2. Connection Testing
 Tested multiple access paths to UDR:
 
 | Method | Target | Result |
 |--------|--------|--------|
-| SSH via WAN IP | <UDM_SE_IP>:22 | TIMEOUT (port firewalled) |
-| HTTPS via WAN IP | <UDM_SE_IP>:443 | SUCCESS (web UI accessible) |
-| Ping via LAN IP | <UDR_WAN_IP> | FAILED (no route from macpro) |
-| SSH via LAN IP | <UDR_WAN_IP>:22 | NOT TESTED (no route) |
+| SSH via WAN IP | <UDR_WAN_IP>:22 | TIMEOUT (port firewalled) |
+| HTTPS via WAN IP | <UDR_WAN_IP>:443 | SUCCESS (web UI accessible) |
+| Ping via LAN IP | <UDR_LAN_IP> | FAILED (no route from macpro) |
+| SSH via LAN IP | <UDR_LAN_IP>:22 | NOT TESTED (no route) |
 
 ### 3. Network Analysis
 **macpro topology**:
-- Local subnet: <UDM_SE_IP>/22
-- Can reach: <UDR_LAN_IP>/24 (NAS network)
-- Cannot reach: <UDM_SE_IP>/24 (UDR network)
+- Local subnet: <NETWORK_ADDRESS>/22
+- Can reach: <NETWORK_ADDRESS>/24 (NAS network)
+- Cannot reach: <NETWORK_ADDRESS>/24 (UDR network)
 - No WireGuard VPN configured
-- Has Tailscale (utun4) but doesn't provide route to <UDM_SE_IP>/24
+- Has Tailscale (utun4) but doesn't provide route to <NETWORK_ADDRESS>/24
 
 **Root cause**: UDR is on isolated network segment with no routing configured.
 
@@ -50,11 +50,11 @@ UniFi devices follow security best practices:
 - SSH is disabled on WAN interface by default
 - Only HTTPS (443) and essential services exposed on WAN
 - SSH access intended via LAN or UniFi management interface
-- The WAN IP (<UDM_SE_IP>) serves the web UI but blocks SSH
+- The WAN IP (<UDR_WAN_IP>) serves the web UI but blocks SSH
 
 ### Network Isolation
-The UDR LAN IP (<UDR_WAN_IP>) is not reachable from:
-- macpro (<UDM_SE_IP>/22 network)
+The UDR LAN IP (<UDR_LAN_IP>) is not reachable from:
+- macpro (<NETWORK_ADDRESS>/22 network)
 - NAS harlow (<NAS_IP>)
 - No VPN route configured
 
@@ -62,11 +62,11 @@ The UDR LAN IP (<UDR_WAN_IP>) is not reachable from:
 
 ### Option 1: Enable WAN SSH Temporarily (RECOMMENDED)
 **Steps**:
-1. Access https://<UDM_SE_IP> (UniFi web UI)
+1. Access https://<UDR_WAN_IP> (UniFi web UI)
 2. Navigate to: Settings > System > Advanced
 3. Enable SSH access
 4. Look for "SSH on WAN" option and enable if available
-5. Run deployment: `./UDR-QUICK-DEPLOY.sh` (sets UDR_HOST=<UDM_SE_IP>)
+5. Run deployment: `./UDR-QUICK-DEPLOY.sh` (sets UDR_HOST=<UDR_WAN_IP>)
 6. Disable WAN SSH after completion
 
 **Pros**: Quick, uses automated script, verifies deployment
@@ -74,19 +74,19 @@ The UDR LAN IP (<UDR_WAN_IP>) is not reachable from:
 
 ### Option 2: Access via LAN
 **Requirements**:
-- Physical or VPN access to <UDM_SE_IP>/24 network
-- Or configure routing between <UDM_SE_IP>/22 and <UDM_SE_IP>/24
+- Physical or VPN access to <NETWORK_ADDRESS>/24 network
+- Or configure routing between <NETWORK_ADDRESS>/22 and <NETWORK_ADDRESS>/24
 
 **Steps**:
 1. Connect to UDR network (direct connection or routing/VPN)
-2. Run: `UDR_HOST=<UDR_WAN_IP> ./UDR-QUICK-DEPLOY.sh`
+2. Run: `UDR_HOST=<UDR_LAN_IP> ./UDR-QUICK-DEPLOY.sh`
 
 **Pros**: More secure (no WAN exposure)
 **Cons**: Requires network topology changes or physical access
 
 ### Option 3: Manual Console Deployment
 **Steps**:
-1. Access https://<UDM_SE_IP>
+1. Access https://<UDR_WAN_IP>
 2. Navigate to: System > Console (or SSH via UniFi application)
 3. Run commands manually (see UDR-DEPLOY-STATUS.md "Manual Commands" section)
 
@@ -94,9 +94,9 @@ The UDR LAN IP (<UDR_WAN_IP>) is not reachable from:
 **Cons**: Error-prone, no automated verification, tedious
 
 ### Option 4: Configure VPN Route
-If WireGuard VPN on hplaptop can be configured to route <UDM_SE_IP>/24:
+If WireGuard VPN on hplaptop can be configured to route <NETWORK_ADDRESS>/24:
 1. Connect to VPN
-2. Deploy via LAN IP (<UDR_WAN_IP>)
+2. Deploy via LAN IP (<UDR_LAN_IP>)
 
 **Pros**: Secure remote access
 **Cons**: Requires VPN configuration changes
@@ -108,10 +108,10 @@ If WireGuard VPN on hplaptop can be configured to route <UDM_SE_IP>/24:
 cd /private/tmp/crowdsec-unifi-parser
 
 # For WAN access (if SSH enabled on WAN)
-UDR_HOST=<UDM_SE_IP> UDR_USER=root ./UDR-QUICK-DEPLOY.sh
+UDR_HOST=<UDR_WAN_IP> UDR_USER=root ./UDR-QUICK-DEPLOY.sh
 
 # For LAN access
-UDR_HOST=<UDR_WAN_IP> UDR_USER=root ./UDR-QUICK-DEPLOY.sh
+UDR_HOST=<UDR_LAN_IP> UDR_USER=root ./UDR-QUICK-DEPLOY.sh
 ```
 
 ### Manual Method
@@ -168,7 +168,7 @@ SUCCESS: 14 LOG rules deployed across 7 chain(s)
 ```
 
 ## Reference Deployment (UDM SE)
-The same script was successfully deployed on UDM SE (<UDR_LAN_IP>) and is currently working. This proves:
+The same script was successfully deployed on UDM SE (<UDM_SE_IP>) and is currently working. This proves:
 - Script works correctly
 - Paramiko authentication works
 - CrowdSec parser is receiving and parsing logs
