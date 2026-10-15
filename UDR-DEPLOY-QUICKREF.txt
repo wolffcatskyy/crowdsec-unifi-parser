@@ -6,8 +6,8 @@ CURRENT STATUS: Blocked - SSH access not available
 
 TARGET DEVICE
   Device:   UniFi Dream Router (UDR)
-  WAN IP:   <UDM_SE_IP> (HTTPS works, SSH blocked)
-  LAN IP:   <UDR_WAN_IP> (no route from macpro/NAS)
+  WAN IP:   <UDR_WAN_IP> (HTTPS works, SSH blocked)
+  LAN IP:   <UDR_LAN_IP> (no route from macpro/NAS)
   SSH User: root
   SSH Pass: <UDR_SSH_PASSWORD>
 
@@ -18,17 +18,17 @@ BLOCKER
 
 FASTEST SOLUTION
   Enable SSH on WAN temporarily:
-  1. Open https://<UDM_SE_IP> in browser
+  1. Open https://<UDR_WAN_IP> in browser
   2. Settings > System > Advanced > Enable SSH
   3. Look for "SSH on WAN" option - enable if present
   4. Run: cd /private/tmp/crowdsec-unifi-parser && ./UDR-QUICK-DEPLOY.sh
   5. After deployment: Disable SSH on WAN
 
 ONE-LINE DEPLOYMENT (once SSH is accessible)
-  python3 deploy-log-rules.py --host <UDM_SE_IP> --user root --pass '<UDR_SSH_PASSWORD>'
+  python3 deploy-log-rules.py --host <UDR_WAN_IP> --user root --pass '<UDR_SSH_PASSWORD>'
 
   Or via LAN (if route available):
-  python3 deploy-log-rules.py --host <UDR_WAN_IP> --user root --pass '<UDR_SSH_PASSWORD>'
+  python3 deploy-log-rules.py --host <UDR_LAN_IP> --user root --pass '<UDR_SSH_PASSWORD>'
 
 DRY RUN FIRST (recommended)
   python3 deploy-log-rules.py --host <IP> --user root --pass '<PASS>' --dry-run
@@ -46,7 +46,7 @@ DOCUMENTATION
   Main deployer:   deploy-log-rules.py
 
 PROVEN WORKING
-  Same script successfully deployed on UDM SE (<UDR_LAN_IP>)
+  Same script successfully deployed on UDM SE (<UDM_SE_IP>)
   CrowdSec parser tested and working
   This is a known-good deployment path
 
