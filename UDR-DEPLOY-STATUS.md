@@ -5,8 +5,8 @@
 
 ## Attempted Deployment
 **Target Device**: UniFi Dream Router (UDR)
-- WAN IP: <UDM_SE_IP>
-- LAN IP: <UDR_WAN_IP> (not routable from NAS)
+- WAN IP: <UDR_WAN_IP>
+- LAN IP: <UDR_LAN_IP> (not routable from NAS)
 - SSH User: claude-code
 - SSH Port: 22 (standard)
 
@@ -16,12 +16,12 @@
 ## Details
 
 ### Issue
-The UDR's WAN IP (<UDM_SE_IP>) is reachable via HTTPS (curl returns UniFi OS web page), but SSH port 22 is **blocked/firewalled** on the WAN interface.
+The UDR's WAN IP (<UDR_WAN_IP>) is reachable via HTTPS (curl returns UniFi OS web page), but SSH port 22 is **blocked/firewalled** on the WAN interface.
 
 Connection attempts:
 ```
-$ curl --connect-timeout 5 -v telnet://<UDM_SE_IP>:22
-* Failed to connect to <UDM_SE_IP> port 22 after 5005 ms: Timeout was reached
+$ curl --connect-timeout 5 -v telnet://<UDR_WAN_IP>:22
+* Failed to connect to <UDR_WAN_IP> port 22 after 5005 ms: Timeout was reached
 ```
 
 ### Root Cause
@@ -33,22 +33,22 @@ UniFi devices typically **do not expose SSH on the WAN interface by default** fo
 ### Options to Resolve
 
 #### Option 1: Enable WAN SSH Access (Quick but less secure)
-1. Log into UDR via web UI at https://<UDM_SE_IP>
+1. Log into UDR via web UI at https://<UDR_WAN_IP>
 2. Navigate to Settings > System > Device Authentication
 3. Enable "SSH" and potentially "Advanced" > "Enable SSH on WAN"
 4. Note: This is generally not recommended for security reasons
 
 #### Option 2: Access via LAN (Recommended)
-Since the UDR LAN IP (<UDR_WAN_IP>) is not routable from the NAS, you would need to:
-1. Temporarily connect from a device on the <UDM_SE_IP>/24 network
+Since the UDR LAN IP (<UDR_LAN_IP>) is not routable from the NAS, you would need to:
+1. Temporarily connect from a device on the <NETWORK_ADDRESS>/24 network
 2. Run the deploy script from that device:
    ```bash
-   python3 deploy-log-rules.py --host <UDR_WAN_IP> --user root --pass '<UDR_SSH_PASSWORD>'
+   python3 deploy-log-rules.py --host <UDR_LAN_IP> --user root --pass '<UDR_SSH_PASSWORD>'
    ```
-3. Alternative: Run from macpro if it has route to <UDM_SE_IP>/24
+3. Alternative: Run from macpro if it has route to <NETWORK_ADDRESS>/24
 
 #### Option 3: VPN/Tunnel Access
-If WireGuard or another VPN provides access to the <UDM_SE_IP>/24 network:
+If WireGuard or another VPN provides access to the <NETWORK_ADDRESS>/24 network:
 1. Connect to VPN
 2. Access UDR via LAN IP
 3. Run deployment script
@@ -63,7 +63,7 @@ The deploy script (`deploy-log-rules.py`) is ready and tested:
 - Paramiko installed successfully
 - Script syntax validated
 - Dry-run mode available
-- Successfully deployed on UDM SE (<UDR_LAN_IP>)
+- Successfully deployed on UDM SE (<UDM_SE_IP>)
 
 ## Next Steps
 
@@ -95,15 +95,15 @@ After successful deployment:
 ## Network Topology Analysis
 
 ### Current Situation
-- **macpro** (<UDM_SE_IP>): Can reach <UDR_LAN_IP>/24 but NOT <UDM_SE_IP>/24
-- **NAS harlow** (<NAS_IP>): Can reach <UDR_LAN_IP>/24 but NOT <UDM_SE_IP>/24
-- **UDR** (<UDR_WAN_IP>): Separate network segment, no routing configured
-- **UDR WAN** (<UDM_SE_IP>): SSH port 22 is firewalled (connection timeout)
+- **macpro** (<MACPRO_IP>): Can reach <NETWORK_ADDRESS>/24 but NOT <NETWORK_ADDRESS>/24
+- **NAS harlow** (<NAS_IP>): Can reach <NETWORK_ADDRESS>/24 but NOT <NETWORK_ADDRESS>/24
+- **UDR** (<UDR_LAN_IP>): Separate network segment, no routing configured
+- **UDR WAN** (<UDR_WAN_IP>): SSH port 22 is firewalled (connection timeout)
 
 ### Tested Paths
-1. macpro -> <UDR_WAN_IP>: No route (100% packet loss)
-2. macpro -> <UDM_SE_IP>:22: Connection timeout (firewall/disabled)
-3. macpro -> <UDM_SE_IP>:443: SUCCESS (UniFi web UI accessible)
+1. macpro -> <UDR_LAN_IP>: No route (100% packet loss)
+2. macpro -> <UDR_WAN_IP>:22: Connection timeout (firewall/disabled)
+3. macpro -> <UDR_WAN_IP>:443: SUCCESS (UniFi web UI accessible)
 
 ## Technical Notes
 
@@ -120,7 +120,7 @@ Some users configure SSH on non-standard WAN port (2222, 8022, etc.)
 
 ### Manual Deployment Option
 If SSH access cannot be established remotely, the iptables rules can be deployed manually:
-1. Access UDR console via UniFi web UI (https://<UDM_SE_IP>) -> System -> Console
+1. Access UDR console via UniFi web UI (https://<UDR_WAN_IP>) -> System -> Console
 2. Copy commands from deploy script and run manually
 3. See "Manual Commands" section below
 
@@ -168,7 +168,7 @@ NOTE: The automated script handles all of this complexity. Manual deployment is 
 ## Recommended Solution
 
 **BEST PATH FORWARD**: Enable SSH on WAN interface temporarily
-1. Access UniFi web UI: https://<UDM_SE_IP>
+1. Access UniFi web UI: https://<UDR_WAN_IP>
 2. Login with admin credentials
 3. Settings > System > Advanced > Enable SSH
 4. Check if "SSH on WAN" option exists and enable it temporarily
@@ -180,7 +180,7 @@ This is the quickest path to deployment while maintaining the automation and ver
 
 ## Contact
 If access method is unclear or assistance needed:
-1. Verify UDR network topology (routing from macpro to <UDR_WAN_IP>)
-2. Check if VPN provides <UDM_SE_IP>/24 access
+1. Verify UDR network topology (routing from macpro to <UDR_LAN_IP>)
+2. Check if VPN provides <NETWORK_ADDRESS>/24 access
 3. Consider temporary WAN SSH enablement if security requirements allow
 4. As last resort, use manual console commands (see above)
