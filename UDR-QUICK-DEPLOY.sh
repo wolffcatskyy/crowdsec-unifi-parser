@@ -10,9 +10,13 @@ echo "=============================================="
 echo ""
 
 # Configuration
-UDR_HOST="${UDR_HOST:-192.168.21.1}"
+UDR_HOST="${UDR_HOST:?Set UDR_HOST to the router hostname or IP address}"
 UDR_USER="${UDR_USER:-root}"
-UDR_PASS="${UDR_PASS:-!#o#It0S!#o#It0S}"
+UDR_PASS="${UDR_PASS:-}"
+if [ -z "$UDR_PASS" ]; then
+    read -r -s -p "UDR SSH password: " UDR_PASS
+    printf "\n"
+fi
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 
 echo "Target: $UDR_USER@$UDR_HOST"
@@ -34,8 +38,8 @@ else
     echo ""
     echo "Troubleshooting:"
     echo "1. Verify SSH is enabled on UDR"
-    echo "2. If using WAN IP (47.202.19.61), enable SSH on WAN in UniFi settings"
-    echo "3. If using LAN IP (192.168.21.1), ensure you have network route"
+    echo "2. If using WAN IP (<UDM_SE_IP>), enable SSH on WAN in UniFi settings"
+    echo "3. If using LAN IP (<UDR_WAN_IP>), ensure you have network route"
     echo "4. Check firewall rules"
     exit 1
 fi
@@ -62,7 +66,7 @@ if [[ $REPLY =~ ^[Yy]$ ]]; then
     echo "====== NEXT STEPS ======"
     echo "1. Configure syslog forwarding on UDR:"
     echo "   Settings > System > Logging > Remote Logging"
-    echo "   Server: 192.168.18.10"
+    echo "   Server: <NAS_IP>"
     echo "   Port: 514"
     echo "   Protocol: UDP"
     echo ""
