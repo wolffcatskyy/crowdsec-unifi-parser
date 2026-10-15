@@ -38,8 +38,8 @@ else
     echo ""
     echo "Troubleshooting:"
     echo "1. Verify SSH is enabled on UDR"
-    echo "2. If using WAN IP (<UDM_SE_IP>), enable SSH on WAN in UniFi settings"
-    echo "3. If using LAN IP (<UDR_WAN_IP>), ensure you have network route"
+    echo "2. If using WAN IP (<UDR_WAN_IP>), enable SSH on WAN in UniFi settings"
+    echo "3. If using LAN IP (<UDR_LAN_IP>), ensure you have network route"
     echo "4. Check firewall rules"
     exit 1
 fi
