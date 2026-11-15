@@ -1,0 +1,149 @@
+[
+  {
+    "name": "normal",
+    "source_ip": "198.51.100.101",
+    "prefix": "UDM kernel: [UNIFI-WAN_LOCAL-D-ALL]",
+    "flags": "RES=0x00 SYN URGP=0",
+    "sequence_fields": "",
+    "accept": true
+  },
+  {
+    "name": "ecn",
+    "source_ip": "198.51.100.102",
+    "prefix": "UDM kernel: [UNIFI-WAN_LOCAL-D-ALL]",
+    "flags": "RES=0x00 CWR ECE SYN URGP=0",
+    "sequence_fields": "",
+    "accept": true
+  },
+  {
+    "name": "ae",
+    "source_ip": "198.51.100.103",
+    "prefix": "UDM kernel: [UNIFI-WAN_LOCAL-D-ALL]",
+    "flags": "RES=0x00 AE CWR ECE SYN URGP=0",
+    "sequence_fields": "",
+    "accept": true
+  },
+  {
+    "name": "synfin",
+    "source_ip": "198.51.100.104",
+    "prefix": "UDM kernel: [UNIFI-WAN_LOCAL-D-ALL]",
+    "flags": "RES=0x00 SYN FIN URGP=0",
+    "sequence_fields": "",
+    "accept": true
+  },
+  {
+    "name": "synack",
+    "source_ip": "198.51.100.105",
+    "prefix": "UDM kernel: [UNIFI-WAN_LOCAL-D-ALL]",
+    "flags": "RES=0x00 ACK SYN URGP=0",
+    "sequence_fields": "",
+    "accept": false
+  },
+  {
+    "name": "ack",
+    "source_ip": "198.51.100.106",
+    "prefix": "UDM kernel: [UNIFI-WAN_LOCAL-D-ALL]",
+    "flags": "RES=0x00 ACK URGP=0",
+    "sequence_fields": "",
+    "accept": false
+  },
+  {
+    "name": "fin",
+    "source_ip": "198.51.100.107",
+    "prefix": "UDM kernel: [UNIFI-WAN_LOCAL-D-ALL]",
+    "flags": "RES=0x00 FIN URGP=0",
+    "sequence_fields": "",
+    "accept": false
+  },
+  {
+    "name": "null",
+    "source_ip": "198.51.100.108",
+    "prefix": "UDM kernel: [UNIFI-WAN_LOCAL-D-ALL]",
+    "flags": "RES=0x00 URGP=0",
+    "sequence_fields": "",
+    "accept": false
+  },
+  {
+    "name": "prefix_ack",
+    "source_ip": "198.51.100.109",
+    "prefix": "UDM kernel: [UNIFI ACK RULE]",
+    "flags": "RES=0x00 SYN URGP=0",
+    "sequence_fields": "",
+    "accept": true
+  },
+  {
+    "name": "prefix_syn",
+    "source_ip": "198.51.100.110",
+    "prefix": "UDM kernel: [UNIFI SYN RULE]",
+    "flags": "RES=0x00 FIN URGP=0",
+    "sequence_fields": "",
+    "accept": false
+  },
+  {
+    "name": "tabs",
+    "source_ip": "198.51.100.111",
+    "prefix": "UDM kernel: [UNIFI-WAN_LOCAL-D-ALL]",
+    "flags": "RES=0x00\tSYN\tURGP=0",
+    "sequence_fields": "",
+    "accept": true
+  },
+  {
+    "name": "missingflags",
+    "source_ip": "198.51.100.112",
+    "prefix": "UDM kernel: [UNIFI-WAN_LOCAL-D-ALL]",
+    "flags": "RES=0x00",
+    "sequence_fields": "",
+    "accept": false
+  },
+  {
+    "name": "options",
+    "source_ip": "198.51.100.113",
+    "prefix": "UDM kernel: [UNIFI-WAN_LOCAL-D-ALL]",
+    "flags": "RES=0x00 SYN URGP=0 OPT (020405B4)",
+    "sequence_fields": "",
+    "accept": true
+  },
+  {
+    "name": "nores",
+    "source_ip": "198.51.100.114",
+    "prefix": "UDM kernel: [UNIFI-WAN_LOCAL-D-ALL]",
+    "flags": "SYN URGP=0",
+    "sequence_fields": "",
+    "accept": true
+  },
+  {
+    "name": "sequence",
+    "source_ip": "198.51.100.115",
+    "prefix": "UDM kernel: [UNIFI-WAN_LOCAL-D-ALL]",
+    "flags": "RES=0x00 SYN URGP=0",
+    "sequence_fields": " SEQ=12 ACK=34",
+    "accept": true
+  },
+  {
+    "name": "native_prefix_syn",
+    "source_ip": "198.51.100.121",
+    "prefix": "UDM [WAN_LOCAL-D-2147483647]",
+    "description": "DESCR=\"[WAN_LOCAL]Block All Traffic\" ",
+    "flags": "RES=0x00 SYN URGP=0",
+    "sequence_fields": "",
+    "accept": true
+  },
+  {
+    "name": "native_prefix_reply",
+    "source_ip": "198.51.100.122",
+    "prefix": "UDM [WAN_LOCAL-D-2147483647]",
+    "description": "DESCR=\"[WAN_LOCAL]Block All Traffic\" ",
+    "flags": "RES=0x00 ACK URGP=0",
+    "sequence_fields": "",
+    "accept": false
+  },
+  {
+    "name": "native_prefix_kernel",
+    "source_ip": "198.51.100.123",
+    "prefix": "UDM [WAN_LOCAL-D-2147483647] kernel:",
+    "description": "DESCR=\"[WAN_LOCAL]Block All Traffic\" ",
+    "flags": "RES=0x00 SYN URGP=0",
+    "sequence_fields": "",
+    "accept": true
+  }
+]
