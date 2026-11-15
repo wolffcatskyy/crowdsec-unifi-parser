@@ -15,7 +15,13 @@
 type: leaky
 name: crowdsecurity/unifi-port-knock
 description: "Detect sequential port scanning (port knocking/systematic reconnaissance)"
-filter: "evt.Meta.log_type == 'iptables_drop' && evt.Meta.service == 'tcp'"
+# Count SYN-set, ACK-unset packets, including SYN+FIN, not late replies.
+# Kernel TCP flags are bare tokens, not fields exposed by the iptables parser.
+# Scope to WINDOW / optional RES / ordered flags / URGP, not prefix words.
+# Missing/truncated flag fields fail closed; NULL/FIN/Xmas scans do not count.
+# Assumes kernel-format UniFi logs and operator-controlled prefixes. A prefix
+# forging a complete spaced WINDOW/flags/URGP block can still match this regex.
+filter: "evt.Meta.log_type == 'iptables_drop' && evt.Meta.service == 'tcp' && evt.Parsed.message matches '(^|[[:space:]])WINDOW=[0-9]+[[:space:]]+(RES=0x[0-9A-Fa-f]+[[:space:]]+)?(AE[[:space:]]+)?(CWR[[:space:]]+)?(ECE[[:space:]]+)?(URG[[:space:]]+)?(PSH[[:space:]]+)?(RST[[:space:]]+)?SYN[[:space:]]+(FIN[[:space:]]+)?URGP=[0-9]+([[:space:]]|$)'"
 groupby: evt.Meta.source_ip
 distinct: evt.Parsed.dst_port
 capacity: 9

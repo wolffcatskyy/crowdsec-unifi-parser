@@ -81,7 +81,7 @@ UDM iptables LOG rules          CrowdSec parsers
 - **Clean tagged log entries** like `[UNIFI-WAN_LOCAL-D-INVALID]` that are trivial to parse
 - **Two log pipelines**: syslog-based firewall logs AND CEF-format controller events
 - **Port scan detection** out of the box (3+ ports in 5 seconds = ban)
-- **DDoS/flood detection** (100+ drops in 30 seconds = 24-hour ban)
+- **DDoS/flood detection** (leaky bucket: capacity 99, one event leaks every 30 seconds)
 - **SSH brute force detection** via dropbear parser (UDM's SSH daemon)
 - **Pairs with [crowdsec-unifi-bouncer](https://github.com/wolffcatskyy/crowdsec-unifi-bouncer)** for a complete detect-and-block loop
 
@@ -240,15 +240,17 @@ Detects systematic sequential port scanning that differs from random burst scans
 
 The two scenarios complement each other: burst detection catches fast attackers immediately, while sequential detection catches patient attackers who spread their probes over time to evade burst detection.
 
+Both scan scenarios count TCP packets with SYN set and ACK unset, including SYN+FIN. They match the kernel-format flag region after `WINDOW=` (optional `RES=`) and before `URGP=`, rather than arbitrary flag words in a rule prefix. Missing or truncated flag fields fail closed. NULL, FIN-only and Xmas scans are not counted. This assumes kernel-format UniFi logs with operator-controlled prefixes; a prefix forging a complete spaced packet-field block is outside that assumption and can still match.
+
 ### DDoS/Flood Detection (`unifi-flood-detection`)
 
-Detects high-volume flood attacks: 100+ dropped packets from the same source IP within 30 seconds triggers a 24-hour ban.
+Detects high-volume firewall drops per source IP with a leaky bucket: capacity 99, with one event leaking every 30 seconds. A sufficiently fast burst of 100 drops overflows the bucket; a sustained rate above one drop per 30 seconds can also overflow it over time. This is not a fixed 30-second window. An isolated burst of fewer than 100 drops does not overflow an initially empty bucket.
 
 - **Type**: Leaky bucket
-- **Capacity**: 99 (triggers on 100th drop)
+- **Capacity**: 99 (a sufficiently fast burst overflows on the 100th drop)
 - **Leak speed**: 30 seconds
 - **Blackhole**: 5 minutes (suppress duplicate alerts during ongoing attack)
-- **Ban duration**: 24 hours
+- **Ban duration**: controlled by the operator's local `profiles.yaml`, not this scenario
 - **Labels**: `remediation: true` (CrowdSec will issue a ban decision)
 - **MITRE ATT&CK**: T1498 (Network Denial of Service), T1499 (Endpoint Denial of Service)
 
@@ -260,12 +262,12 @@ This scenario catches:
 
 ### Dropbear SSH Brute Force (`dropbear-bf`)
 
-Detects SSH brute force attempts against UDM/UDR dropbear daemon: 5 failed authentication attempts from the same source IP within 1 minute triggers a 4-hour ban.
+Detects SSH brute force attempts against the UDM/UDR dropbear daemon. A sufficiently fast burst of five failures from the same source IP overflows its leaky bucket. Ban duration is controlled by the operator's local `profiles.yaml`.
 
 - **Type**: Leaky bucket
 - **Capacity**: 4 (triggers on 5th failed attempt)
 - **Leak speed**: 1 minute
-- **Blackhole**: 4 hours (ban duration)
+- **Blackhole**: 4 hours (suppresses duplicate alerts after an overflow; not the ban duration)
 - **Labels**: `remediation: true` (CrowdSec will issue a ban decision)
 - **MITRE ATT&CK**: T1110.001 (Password Guessing), T1110.003 (Password Spraying)
 
@@ -357,7 +359,7 @@ crowdsec-unifi-parser/
 ├── scenarios/
 │   ├── iptables-scan-multi_ports.yaml     # TCP burst port scan detection
 │   ├── unifi-port-knock.yaml              # Sequential port-knock detection
-│   ├── unifi-flood-detection.yaml         # DDoS/flood attack detection (100+ drops/30s = 24h ban)
+│   ├── unifi-flood-detection.yaml         # DDoS/flood attack detection (capacity 99, leak interval 30s)
 │   ├── dropbear-bf.yaml                   # SSH brute force detection (UDM dropbear)
 │   ├── unifi-ips-alert.yaml               # UniFi IPS/Threat Management detection
 │   └── unifi-admin-bf.yaml                # UniFi admin brute force detection
